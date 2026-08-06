@@ -71,7 +71,7 @@ class Splash(QWidget):
 
         self.lbl = QLabel("PVL-PiHCAM")
         self.lbl.setFont(QFont("DejaVu Sans", 20, FONT_BOLD))
-        self.lbl.setStyleSheet("color:#55ddff;")
+        self.lbl.setStyleSheet("color:#5df;")
         self.lbl.setAlignment(ALIGN_CENTER)
 
         self.lbl_etapa = QLabel("")
@@ -86,7 +86,7 @@ class Splash(QWidget):
         self.barra.setStyleSheet("""
             QProgressBar { background:#1e1e1e; border:1px solid #333;
                            border-radius:8px; }
-            QProgressBar::chunk { background:#2e7d32; border-radius:7px; }
+            QProgressBar::chunk { background:#5bf; border-radius:7px; }
         """)
 
         layout.addStretch(1)
