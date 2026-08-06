@@ -564,6 +564,38 @@ class Handycam(QWidget):
 # Janela de configurações (resolução + fps)
 # ----------------------------------------------------------------------
 
+class DialogoUpdate(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
+        self.setModal(True)
+        self.setFixedSize(440, 240)
+        self.setStyleSheet("background:#1b1b1b; color:#eee;")
+
+        self.lbl = QLabel("Conectando...")
+        self.lbl.setAlignment(Qt.AlignCenter)
+        self.lbl.setWordWrap(True)
+        self.lbl.setFont(QFont("DejaVu Sans", 13))
+
+        self.btn = QPushButton("OK")
+        self.btn.setMinimumHeight(56)
+        self.btn.clicked.connect(self.accept)
+        self.btn.hide()   # só aparece quando termina
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(20, 20, 20, 20)
+        lay.setSpacing(16)
+        lay.addWidget(self.lbl, 1)
+        lay.addWidget(self.btn)
+
+    def mensagem(self, texto):
+        self.lbl.setText(texto)
+
+    def finalizar(self, texto):
+        self.lbl.setText(texto)
+        self.btn.show()
+
+
 class Configura(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -750,22 +782,22 @@ class Configura(QWidget):
         return btn
 
     def atualizar_app(self):
-        self.dlg_update = QMessageBox(self)
-        self.dlg_update.setWindowTitle("Atualização")
-        self.dlg_update.setText("Conectando...")
-        self.dlg_update.setStandardButtons(QMessageBox.NoButton)
-        self.dlg_update.show()
+        self._reiniciar_apos = False
+        self.dlg_update = DialogoUpdate(self)
 
         self.worker_update = AtualizadorWorker()
-        self.worker_update.progresso.connect(self.dlg_update.setText)
+        self.worker_update.progresso.connect(self.dlg_update.mensagem)
         self.worker_update.terminou.connect(self._fim_update)
         self.worker_update.start()
 
+        self.dlg_update.exec_()        # bloqueia até o usuário tocar em OK
+
+        if self._reiniciar_apos:
+            self.reiniciar_app()
+
     def _fim_update(self, precisa_reiniciar, msg):
-        self.dlg_update.close()
-        QMessageBox.information(self, "Atualização", msg)
-        if precisa_reiniciar:
-            self.reiniciar_app()   # reaproveite o os.execv do "Aplicar e Reiniciar"
+        self._reiniciar_apos = precisa_reiniciar
+        self.dlg_update.finalizar(msg)
 
     def aplicar_estilo_botoes(self):
         self.setStyleSheet(self.styleSheet() + """
