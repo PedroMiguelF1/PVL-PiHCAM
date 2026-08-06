@@ -216,7 +216,7 @@ class Handycam(QWidget):
         status.addWidget(self.btn_conf)
 
         self.btn_rec = QPushButton("● REC")
-        self.btn_photo = QPushButton("FOTO") 
+        self.btn_photo = QPushButton("📷 FOTO") 
         self.btn_modo = QPushButton("☾ NOITE")
         self.btn_sair = QPushButton("SAIR")
 
