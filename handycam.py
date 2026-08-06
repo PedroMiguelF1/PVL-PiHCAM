@@ -198,7 +198,7 @@ class Handycam(QWidget):
         self.btn_conf.setFont(QFont("DejaVu Sans", 15, FONT_BOLD))
         self.btn_conf.setFocusPolicy(NO_FOCUS)
  
-        self.btn_files = QPushButton("▤")
+        self.btn_files = QPushButton("≡")
         self.btn_files.setStyleSheet(
             "QPushButton{background:#222;border:2px solid #333;"
             "border-radius:10px;color:#fff;padding:6px 18px;}"
@@ -217,7 +217,7 @@ class Handycam(QWidget):
 
         self.btn_rec = QPushButton("● REC")
         self.btn_photo = QPushButton("FOTO") 
-        self.btn_modo = QPushButton("NOITE")
+        self.btn_modo = QPushButton("☾ NOITE")
         self.btn_sair = QPushButton("SAIR")
 
         for b in (self.btn_modo, self.btn_sair, self.btn_rec, self.btn_photo):
@@ -311,7 +311,7 @@ class Handycam(QWidget):
             "FrameRate": FPS_DIA,
         })
         self.noite = False
-        self.btn_modo.setText("NOITE")
+        self.btn_modo.setText("☾ NOITE")
         self.btn_modo.setStyleSheet(
             "QPushButton{background:#121;border:2px solid #5f5;"
             "border-radius:10px;color:#5f5;padding:6px 18px;}"
@@ -331,7 +331,7 @@ class Handycam(QWidget):
         })
         self.picam2.post_callback = tint_green
         self.noite = True
-        self.btn_modo.setText("DIA")
+        self.btn_modo.setText("☀ DIA")
         self.btn_modo.setStyleSheet(
             "QPushButton{background:#321;border:2px solid #fd7;"
             "border-radius:10px;color:#fd7;padding:6px 18px;}"
