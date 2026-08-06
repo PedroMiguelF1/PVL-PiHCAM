@@ -769,14 +769,14 @@ class Configura(QWidget):
         self.marcar_selecionado()
 
     def _criar_botao_update(self):
-        btn = QPushButton("Atualizar App")
-        btn.setMinimumHeight(64)
+        btn = QPushButton("⭳ Atualizar")
+        btn.setMinimumHeight(50)
         btn.setFont(QFont("DejaVu Sans", 15))
         btn.setFocusPolicy(NO_FOCUS)
         btn.setStyleSheet(
-            "QPushButton{background:#235;border:2px solid #5df;"
-            "border-radius:10px;color:#5df;padding:6px 18px;}"
-            "QPushButton:pressed{background:#346;}"
+            "QPushButton{background:#222;border:2px solid #333;"
+            "border-radius:10px;color:#fff;padding:6px 18px;}"
+            "QPushButton:pressed{background:#346;border:2px solid #7ef;color:#fff;}"
         )
         btn.clicked.connect(self.atualizar_app)
         return btn
