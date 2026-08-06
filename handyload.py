@@ -69,7 +69,7 @@ class Splash(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(60, 40, 60, 50)
 
-        self.lbl = QLabel("HandyPICam NoIR")
+        self.lbl = QLabel("PVL-PiHCAM")
         self.lbl.setFont(QFont("DejaVu Sans", 20, FONT_BOLD))
         self.lbl.setStyleSheet("color:#55ddff;")
         self.lbl.setAlignment(ALIGN_CENTER)

@@ -60,6 +60,8 @@ from picamera2.outputs import FfmpegOutput
 
 from qt import *
 
+from handyupdate import AtualizadorWorker
+
 # ----------------------------------------------------------------------
 # Configuração
 # ----------------------------------------------------------------------
@@ -578,9 +580,17 @@ class Configura(QWidget):
         layout.setSpacing(14)
         layout.setContentsMargins(9, 9, 9, 9)
 
-        lbl_titulo = QLabel("Configurações da Handycam NoIR")
+        lbl_titulo = QLabel("Configurações PVL-PiHCAM")
         lbl_titulo.setFont(QFont("DejaVu Sans", 15))
-        layout.addWidget(lbl_titulo)
+
+        btn_update = self._criar_botao_update()
+
+        linha_topo = QHBoxLayout()
+        linha_topo.addWidget(lbl_titulo)
+        linha_topo.addStretch()
+        linha_topo.addWidget(btn_update)
+
+        layout.addLayout(linha_topo)
 
         # --- Área de scroll com resolução + fps (igual o FilesWindow) ---
         self.scroll_area = QScrollArea()
@@ -725,6 +735,37 @@ class Configura(QWidget):
         self.setLayout(layout)
         self.aplicar_estilo_botoes()
         self.marcar_selecionado()
+
+    def _criar_botao_update(self):
+        btn = QPushButton("Atualizar App")
+        btn.setMinimumHeight(64)
+        btn.setFont(QFont("DejaVu Sans", 15))
+        btn.setFocusPolicy(NO_FOCUS)
+        btn.setStyleSheet(
+            "QPushButton{background:#235;border:2px solid #5df;"
+            "border-radius:10px;color:#5df;padding:6px 18px;}"
+            "QPushButton:pressed{background:#346;}"
+        )
+        btn.clicked.connect(self.atualizar_app)
+        return btn
+
+    def atualizar_app(self):
+        self.dlg_update = QMessageBox(self)
+        self.dlg_update.setWindowTitle("Atualização")
+        self.dlg_update.setText("Conectando...")
+        self.dlg_update.setStandardButtons(QMessageBox.NoButton)
+        self.dlg_update.show()
+
+        self.worker_update = AtualizadorWorker()
+        self.worker_update.progresso.connect(self.dlg_update.setText)
+        self.worker_update.terminou.connect(self._fim_update)
+        self.worker_update.start()
+
+    def _fim_update(self, precisa_reiniciar, msg):
+        self.dlg_update.close()
+        QMessageBox.information(self, "Atualização", msg)
+        if precisa_reiniciar:
+            self.reiniciar_app()   # reaproveite o os.execv do "Aplicar e Reiniciar"
 
     def aplicar_estilo_botoes(self):
         self.setStyleSheet(self.styleSheet() + """

@@ -3,6 +3,7 @@ from PyQt5.QtGui import QFont, QKeySequence, QPixmap, QImage, QPainter, QColor, 
 from PyQt5.QtWidgets import (
     QApplication, QHBoxLayout, QLabel, QPushButton, QShortcut,
     QVBoxLayout, QWidget, QStackedWidget, QScrollArea, QScroller, QSizePolicy, QProgressBar,
+    QMessageBox
     
 )
 
