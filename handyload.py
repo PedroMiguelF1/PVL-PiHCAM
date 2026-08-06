@@ -84,7 +84,7 @@ class Splash(QWidget):
         self.barra.setTextVisible(False)
         self.barra.setFixedHeight(16)
         self.barra.setStyleSheet("""
-            QProgressBar { background:#1e1e1e; border:1px solid #333;
+            QProgressBar { background:#222; border:1px solid #333;
                            border-radius:8px; }
             QProgressBar::chunk { background:#5bf; border-radius:7px; }
         """)
@@ -111,7 +111,7 @@ def criar_splash():
     layout = QVBoxLayout()
     lbl = QLabel("HandyPiCam NoIR")
     lbl.setFont(QFont("DejaVu Sans", 20, FONT_BOLD))
-    lbl.setStyleSheet("color:#55ddff;")
+    lbl.setStyleSheet("color:#5df;")
     lbl.setAlignment(ALIGN_CENTER)
     layout.addWidget(lbl)
     splash.setLayout(layout)
