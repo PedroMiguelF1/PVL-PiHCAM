@@ -738,7 +738,7 @@ class Configura(QWidget):
 
         linha_botoes = QHBoxLayout()
 
-        btn_voltar = QPushButton("Voltar")
+        btn_voltar = QPushButton("← Voltar")
         btn_voltar.setMinimumHeight(64)
         btn_voltar.setFont(QFont("DejaVu Sans", 15))
         btn_voltar.setFocusPolicy(NO_FOCUS)
@@ -749,7 +749,7 @@ class Configura(QWidget):
         )
         btn_voltar.clicked.connect(self.voltar)
 
-        btn_aplicar = QPushButton("Aplicar e Reiniciar")
+        btn_aplicar = QPushButton("↻ Aplicar e Reiniciar")
         btn_aplicar.setMinimumHeight(64)
         btn_aplicar.setFont(QFont("DejaVu Sans", 15))
         btn_aplicar.setFocusPolicy(NO_FOCUS)
@@ -769,7 +769,7 @@ class Configura(QWidget):
         self.marcar_selecionado()
 
     def _criar_botao_update(self):
-        btn = QPushButton("⭳ Atualizar")
+        btn = QPushButton("⛁ Atualizar")
         btn.setMinimumHeight(50)
         btn.setFont(QFont("DejaVu Sans", 15))
         btn.setFocusPolicy(NO_FOCUS)
