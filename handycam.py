@@ -315,7 +315,7 @@ class Handycam(QWidget):
         self.modo_dia()
 
     def _atualiza_relogio(self):
-        self.lbl_relogio.setText(
+        self.lbl_clock.setText(
             QDateTime.currentDateTime().toString("HH:mm:ss")
         )
 
