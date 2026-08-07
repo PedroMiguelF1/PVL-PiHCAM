@@ -216,7 +216,11 @@ class Handycam(QWidget):
         status.addWidget(self.btn_conf)
 
         self.btn_rec = QPushButton("● REC")
-        self.btn_photo = QPushButton("📷 FOTO") 
+
+        self.btn_photo = QPushButton("FOTO")
+        self.btn_photo.setIcon(self._icone_camera_btn("#5bf", 64))
+        self.btn_photo.setIconSize(QSize(32, 24))
+
         self.btn_modo = QPushButton("☾ NOITE")
         self.btn_sair = QPushButton("SAIR")
 
@@ -438,6 +442,18 @@ class Handycam(QWidget):
         raio = int(corpo_h * 0.32)
         cx, cy = int(x + w // 2), int(y + corpo_y + corpo_h // 2)
         p.drawEllipse(cx - raio, cy - raio, raio * 2, raio * 2)
+
+    def _icone_camera_btn(self, cor="#eee", tamanho=64):
+        pm = QPixmap(tamanho, tamanho)
+        pm.fill(Qt.transparent)
+
+        p = QPainter(pm)
+        p.setRenderHint(QPainter.Antialiasing)
+        # margem de 4px pra caneta de 2px não ser cortada nas bordas
+        self._desenha_icone_camera(p, 4, 4, w=tamanho - 8, h=(tamanho - 8) * 0.75, cor=cor)
+        p.end()
+
+        return QIcon(pm)
  
     def _tamanho_overlay(self):
         """

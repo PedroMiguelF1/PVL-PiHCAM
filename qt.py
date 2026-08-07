@@ -1,5 +1,5 @@
-from PyQt5.QtCore import Qt, QTimer, QEventLoop, QThreadPool, QRunnable, QObject, pyqtSignal as Signal
-from PyQt5.QtGui import QFont, QKeySequence, QPixmap, QImage, QPainter, QColor, QPen
+from PyQt5.QtCore import Qt, QTimer, QEventLoop, QThreadPool, QRunnable, QSize, QObject, pyqtSignal as Signal
+from PyQt5.QtGui import QFont, QKeySequence, QPixmap, QImage, QPainter, QColor, QPen, QIcon 
 from PyQt5.QtWidgets import (
     QApplication, QHBoxLayout, QLabel, QPushButton, QShortcut,
     QVBoxLayout, QWidget, QStackedWidget, QScrollArea, QScroller, QSizePolicy, QProgressBar,
