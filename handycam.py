@@ -178,7 +178,15 @@ class Handycam(QWidget):
 
         # O REC (ponto piscando + cronometro) nao fica mais na barra de
         # status: agora e desenhado por cima do preview em _atualiza_overlay().
- 
+
+        self.lbl_clock = QLabel("")
+        self.lbl_modo.setFont(QFont("DejaVu Sans", 13))
+        self.lbl_modo.setAlignment(ALIGN_LEFT)
+        self.timer_relogio.timeout.connect(self._atualiza_relogio)
+        self.timer_relogio.start(1000)          # milissegundos
+        self._atualiza_relogio() 
+
+
         self.lbl_modo = QLabel("")
         self.lbl_modo.setFont(QFont("DejaVu Sans", 13))
         self.lbl_modo.setAlignment(ALIGN_RIGHT)
@@ -304,6 +312,11 @@ class Handycam(QWidget):
         self.timer.start(500)
 
         self.modo_dia()
+
+    def _atualiza_relogio(self):
+        self.lbl_relogio.setText(
+            QDateTime.currentDateTime().toString("HH:mm:ss")
+        )
 
     def modo_dia(self):
         infra_red.off()
