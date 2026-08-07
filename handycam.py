@@ -180,8 +180,8 @@ class Handycam(QWidget):
         # status: agora e desenhado por cima do preview em _atualiza_overlay().
 
         self.lbl_clock = QLabel("")
-        self.lbl_modo.setFont(QFont("DejaVu Sans", 13))
-        self.lbl_modo.setAlignment(ALIGN_LEFT)
+        self.lbl_clock.setFont(QFont("DejaVu Sans", 13))
+        self.lbl_clock.setAlignment(ALIGN_LEFT)
         self.timer_relogio.timeout.connect(self._atualiza_relogio)
         self.timer_relogio.start(1000)          # milissegundos
         self._atualiza_relogio() 
