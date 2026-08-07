@@ -218,6 +218,7 @@ class Handycam(QWidget):
         self.btn_files.setFocusPolicy(NO_FOCUS)
 
         status = QHBoxLayout()
+        status.addWidget(self.lbl_clock)
         status.addStretch()
         status.addWidget(self.lbl_modo)
         status.addWidget(self.lbl_info)
