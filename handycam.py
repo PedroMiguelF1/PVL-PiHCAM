@@ -170,7 +170,7 @@ class Handycam(QWidget):
         self.icone_foto = False   # flash do icone de camera sobre o preview
         self.telas = 0
 
-        self.setWindowTitle("Handycam NoIR (PC / webcam)")
+        self.setWindowTitle("PVL-PiHCAM")
         self.setStyleSheet("background:#111; color:#eee;")
 
         self.preview = QGlPicamera2(picam2, width=RESOLUCAO[0],
@@ -217,7 +217,7 @@ class Handycam(QWidget):
 
         self.btn_rec = QPushButton("● REC")
 
-        self.btn_photo = QPushButton("FOTO")
+        self.btn_photo = QPushButton(" FOTO")
         self.btn_photo.setIcon(self._icone_camera_btn("#5bf", 64))
         self.btn_photo.setIconSize(QSize(32, 24))
 
