@@ -1,7 +1,7 @@
 import cv2, numpy as np
 from .base import efeito
 
-@efeito("noite", "Visão noturna")
+@efeito("noite", "Visão noturna", tipo="cor")
 def tint_green(arr):
     gray = cv2.cvtColor(arr, cv2.COLOR_BGRA2GRAY)
     arr[:, :, 0] = (gray * 0.60).astype(np.uint8)   # azul

@@ -116,18 +116,20 @@ def _label_resolucao(altura):
 def _carregar_config_inicial():
     padrao_res = [1280, 720]
     padrao_fps = 24
+    padrao_efeito = None
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH) as f:
                 cfg = json.load(f)
                 l, a = cfg.get("resolucao", padrao_res)
                 fps = cfg.get("fps", padrao_fps)
-                return l, a, fps
+                efeito = cfg.get("efeito", padrao_efeito)
+                return l, a, fps, efeito
         except (json.JSONDecodeError, OSError, ValueError, TypeError, KeyError):
             pass
-    return padrao_res[0], padrao_res[1], padrao_fps
+    return padrao_res[0], padrao_res[1], padrao_fps, padrao_efeito
 
-_L, _A, FPS_DIA = _carregar_config_inicial()
+_L, _A, FPS_DIA, EFEITO_INICIAL = _carregar_config_inicial()
 RESOLUCAO = (_L, _A)                      # size real usado no configure()
 RESOLUCAO_LABEL = _label_resolucao(_A)     # só pra exibição (VGA/HD/FHD)
 FPS_NOITE = FPS_DIA          # menos fps = mais tempo de exposição = mais luz
@@ -166,13 +168,16 @@ class Handycam(QWidget):
         super().__init__()
         self.picam2 = picam2
         self.picam2.post_callback = efeitos.post_callback
+        efeitos.definir(EFEITO_INICIAL)
         self.noite = False
+        efeitos.definir_noite(self.noite)
         self.gravando = False
         self.encoder = None
         self.t0 = 0.0
         self.blink = False
         self.icone_foto = False   # flash do icone de camera sobre o preview
         self.telas = 0
+        #self.efeito_anterior = None
 
 
         self.setWindowTitle("PVL-PiHCAM")
@@ -327,7 +332,7 @@ class Handycam(QWidget):
 
     def modo_dia(self):
         infra_red.off()
-        efeitos.definir(None)
+        #efeitos.definir(self.efeito_anterior)
         self.picam2.set_controls({
             "AwbEnable": True,
             "AnalogueGain": 0.0,
@@ -335,6 +340,7 @@ class Handycam(QWidget):
             "FrameRate": FPS_DIA,
         })
         self.noite = False
+        efeitos.definir_noite(self.noite)
         self.btn_modo.setText("☾ NOITE")
         self.btn_modo.setStyleSheet(
             "QPushButton{background:#121;border:2px solid #5f5;"
@@ -353,8 +359,9 @@ class Handycam(QWidget):
             "Saturation": 0.0,
             "FrameRate": FPS_NOITE,
         })
-        efeitos.definir("noite")
+        #self.efeito_anterior = efeitos.nome_atual()  # salva o efeito atual antes de trocar
         self.noite = True
+        efeitos.definir_noite(self.noite)
         self.btn_modo.setText("☀ DIA")
         self.btn_modo.setStyleSheet(
             "QPushButton{background:#321;border:2px solid #fd7;"
@@ -728,8 +735,6 @@ class Configura(QWidget):
             linha.addWidget(btn)
             self.botoes_resolucao.append((btn, largura, altura))
 
-        if len(RESOLUCOES) % 3 and linha is not None:
-            linha.addStretch()
 
         lbl_sub2 = QLabel("FPS (frames por segundo)")
         lbl_sub2.setFont(QFont("DejaVu Sans", 12))
@@ -759,8 +764,6 @@ class Configura(QWidget):
             linha.addWidget(btn)
             self.botoes_fps.append((btn, fps))
 
-        if len(FPS_OPCOES) % 3 and linha is not None:
-            linha.addStretch()
 
         lbl_sub3 = QLabel("Efeito de imagem")
         lbl_sub3.setFont(QFont("DejaVu Sans", 12))
@@ -795,9 +798,6 @@ class Configura(QWidget):
             )
             linha.addWidget(btn)
             self.botoes_efeito.append((btn, nome))
-
-        if len(EFEITO_OPCOES) % 3 and linha is not None:
-            linha.addStretch()
 
 
         conteudo.addStretch()
@@ -955,10 +955,11 @@ class Configura(QWidget):
                     cfg = json.load(f)
                     cfg.setdefault("resolucao", [1280, 720])
                     cfg.setdefault("fps", 24)
+                    cfg.setdefault("efeito", None)
                     return cfg
             except (json.JSONDecodeError, OSError):
                 pass
-        return {"resolucao": [1280, 720], "fps": 24}
+        return {"resolucao": [1280, 720], "fps": 24, "efeito": None}
 
     def salvar_config(self):
         try:
