@@ -633,6 +633,17 @@ class DialogoUpdate(QDialog):
 
 
 class Configura(QWidget):
+
+    BTN_ON = ("QPushButton{background:#223;border:2px solid #5df;"
+              "border-radius:10px;color:#fff;padding:6px 18px;}"
+              "QPushButton:pressed{background:#333;}"
+              "QPushButton:checked{background:#346;border:2px solid #7ef;color:#fff;}")
+    
+    BTN_OFF = ("QPushButton{background:#222;border:2px solid #333;"
+        "border-radius:10px;color:#fff;padding:6px 18px;}"
+        "QPushButton:pressed{background:#333;}"
+        "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}")
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent_app = parent
@@ -679,6 +690,16 @@ class Configura(QWidget):
         self.config_container.setStyleSheet(
             "background:#111; border:1px solid #333; border-radius:5px; padding:10px;"
         )
+        
+        BTN_ON = ("QPushButton{background:#223;border:2px solid #5df;"
+          "border-radius:10px;color:#fff;padding:6px 18px;}"
+          "QPushButton:pressed{background:#333;}"
+          "QPushButton:checked{background:#346;border:2px solid #7ef;color:#fff;}")
+
+        BTN_OFF = ("QPushButton{background:#222;border:2px solid #333;"
+           "border-radius:10px;color:#fff;padding:6px 18px;}"
+           "QPushButton:pressed{background:#333;}"
+           "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}")
 
         lbl_sub1 = QLabel("Resolução e FPS")
         lbl_sub1.setFont(QFont("DejaVu Sans", 12))
@@ -698,19 +719,9 @@ class Configura(QWidget):
             btn.setFont(QFont("DejaVu Sans", 12))
             btn.setFocusPolicy(NO_FOCUS)
             if largura == self.config.get("resolucao", [1280, 720])[0] and altura == self.config.get("resolucao", [1280, 720])[1]:
-                btn.setStyleSheet(
-                "QPushButton{background:#223;border:2px solid #5df;"
-                "border-radius:10px;color:#fff;padding:6px 18px;}"
-                "QPushButton:pressed{background:#333;}"
-                "QPushButton:checked{background:#346;border:2px solid #7ef;color:#fff;}"
-            )
+                btn.setStyleSheet(BTN_ON)
             else:
-                btn.setStyleSheet(
-                    "QPushButton{background:#222;border:2px solid #333;"
-                    "border-radius:10px;color:#fff;padding:6px 18px;}"
-                    "QPushButton:pressed{background:#333;}"
-                    "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}"
-                )
+                btn.setStyleSheet(BTN_OFF)
             btn.clicked.connect(
                 lambda checked, l=largura, a=altura, b=btn: self.selecionar_resolucao(l, a, b)
             )
@@ -738,19 +749,9 @@ class Configura(QWidget):
             btn.setFont(QFont("DejaVu Sans", 12))
             btn.setFocusPolicy(NO_FOCUS)
             if fps == self.config.get("fps"):
-                btn.setStyleSheet(
-                "QPushButton{background:#223;border:2px solid #5df;"
-                "border-radius:10px;color:#fff;padding:6px 18px;}"
-                "QPushButton:pressed{background:#333;}"
-                "QPushButton:checked{background:#346;border:2px solid #7ef;color:#fff;}"
-            )
+                btn.setStyleSheet(BTN_ON)
             else:
-                btn.setStyleSheet(
-                    "QPushButton{background:#222;border:2px solid #333;"
-                    "border-radius:10px;color:#fff;padding:6px 18px;}"
-                    "QPushButton:pressed{background:#333;}"
-                    "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}"
-                )
+                btn.setStyleSheet(BTN_OFF)
 
             btn.clicked.connect(
                 lambda checked, f=fps, b=btn: self.selecionar_fps(f, b)
@@ -760,6 +761,44 @@ class Configura(QWidget):
 
         if len(FPS_OPCOES) % 3 and linha is not None:
             linha.addStretch()
+
+        lbl_sub3 = QLabel("Efeito de imagem")
+        lbl_sub3.setFont(QFont("DejaVu Sans", 12))
+        conteudo.addWidget(lbl_sub3)
+
+        # (nome_interno, texto_do_botao) — None = sem efeito
+        EFEITO_OPCOES = [(None, "Nenhum")] + [
+            (n, info["label"]) for n, info in sorted(
+                efeitos.EFEITOS.items(), key=lambda kv: kv[1]["label"]
+            )
+        ]
+
+        self.botoes_efeito = []
+        atual = self.config.get("efeito")     # ex.: "verde" ou None
+        linha = None
+
+        for i, (nome, label) in enumerate(EFEITO_OPCOES):
+            if i % 3 == 0:
+                linha = QHBoxLayout()
+                conteudo.addLayout(linha)
+
+            btn = QPushButton(label)
+            btn.setCheckable(True)
+            btn.setMinimumHeight(64)
+            btn.setFont(QFont("DejaVu Sans", 12))
+            btn.setFocusPolicy(NO_FOCUS)
+            btn.setChecked(nome == atual)
+            btn.setStyleSheet(BTN_ON if nome == atual else BTN_OFF)
+
+            btn.clicked.connect(
+                lambda checked, n=nome, b=btn: self.selecionar_efeito(n, b)
+            )
+            linha.addWidget(btn)
+            self.botoes_efeito.append((btn, nome))
+
+        if len(EFEITO_OPCOES) % 3 and linha is not None:
+            linha.addStretch()
+
 
         conteudo.addStretch()
         self.config_container.setLayout(conteudo)
@@ -889,6 +928,15 @@ class Configura(QWidget):
         self.salvar_config()
         self.msgFPS = f"{fps} FPS"
         self.atualizar_aviso()
+
+    def selecionar_efeito(self, nome, botao):
+        for b, n in self.botoes_efeito:
+            b.setChecked(n == nome)
+            b.setStyleSheet(self.BTN_ON if n == nome else self.BTN_OFF)
+
+        efeitos.definir(nome)                 # troca imediata, sem os.execv
+        self.config["efeito"] = nome
+        self.salvar_config()                  # o mesmo que grava ~/.handycam_config.json
 
     def marcar_selecionado(self):
         atual_res = self.config.get("resolucao")
