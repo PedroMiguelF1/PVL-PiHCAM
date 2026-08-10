@@ -26,7 +26,6 @@ O app abre direto no boot, sem desktop visível
 | Placa | Raspberry Pi 4B (4 GB) |
 | Câmera | OV5647 IR-Cut |
 | Iluminação | LED infravermelho no GPIO 17 |
-| Iluminação | LED infravermelho no GPIO 17 |
 | Tela | Display touch LCD DSI de 4,3 polegadas |
 | Sistema | Raspberry Pi OS Trixie 64-bit (aarch64) |
 
