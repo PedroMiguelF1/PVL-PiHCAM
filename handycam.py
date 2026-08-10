@@ -46,10 +46,10 @@ os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
 import cv2
 import numpy as np
 
-from picamera2 import Picamera2, MappedArray
-from picamera2.previews.qt import QGlPicamera2
-from picamera2.encoders import H264Encoder
-from picamera2.outputs import FfmpegOutput
+from picamera2 import Picamera2, MappedArray # type: ignore
+from picamera2.previews.qt import QGlPicamera2 # type: ignore
+from picamera2.encoders import H264Encoder # type: ignore
+from picamera2.outputs import FfmpegOutput # type: ignore
 
 # ----------------------------------------------------------------------
 # IMPORTANTE: usar o MESMO binding Qt que o picamera2 usa internamente.
@@ -61,6 +61,9 @@ from picamera2.outputs import FfmpegOutput
 from qt import *
 
 from handyupdate import AtualizadorWorker
+
+import efeitos
+
 
 # ----------------------------------------------------------------------
 # Configuração
@@ -150,7 +153,7 @@ def tint_green(request):
     with MappedArray(request, "main") as m:
         arr = m.array                       # XRGB8888 -> 4 canais
         gray = cv2.cvtColor(arr, cv2.COLOR_BGRA2GRAY)
-        arr[:, :, 0] = (gray * 0.60).astype(np.uint8)   # azul
+        arr[:, :, 0] = (gray * 0.60).astype(np.uint8)    # azul
         arr[:, :, 1] = gray                              # verde
         arr[:, :, 2] = (gray * 0.50).astype(np.uint8)    # vermelho
 
@@ -162,6 +165,7 @@ class Handycam(QWidget):
     def __init__(self, picam2):
         super().__init__()
         self.picam2 = picam2
+        self.picam2.post_callback = efeitos.post_callback
         self.noite = False
         self.gravando = False
         self.encoder = None
@@ -169,6 +173,7 @@ class Handycam(QWidget):
         self.blink = False
         self.icone_foto = False   # flash do icone de camera sobre o preview
         self.telas = 0
+
 
         self.setWindowTitle("PVL-PiHCAM")
         self.setStyleSheet("background:#111; color:#eee;")
@@ -322,7 +327,7 @@ class Handycam(QWidget):
 
     def modo_dia(self):
         infra_red.off()
-        self.picam2.post_callback = None
+        efeitos.definir(None)
         self.picam2.set_controls({
             "AwbEnable": True,
             "AnalogueGain": 0.0,
@@ -348,7 +353,7 @@ class Handycam(QWidget):
             "Saturation": 0.0,
             "FrameRate": FPS_NOITE,
         })
-        self.picam2.post_callback = tint_green
+        efeitos.definir("noite")
         self.noite = True
         self.btn_modo.setText("☀ DIA")
         self.btn_modo.setStyleSheet(
