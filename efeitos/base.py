@@ -9,6 +9,7 @@ Os dois são combinados numa cadeia, remontada só quando algo muda; o
 post_callback apenas percorre a tupla pronta a cada frame.
 """
 
+import time
 from picamera2 import MappedArray
 
 EFEITOS = {}
@@ -18,6 +19,31 @@ _base = None          # nome do efeito da tela
 _noite = False
 _cadeia = ()          # tupla de funções na ordem de aplicação
 
+
+
+ESTADO = {"gravando": False, "inicio_gravacao": 0.0}
+_ouvintes = []
+
+
+def ao_evento(func):
+    """Decorador: registra a função para receber os eventos do app."""
+    _ouvintes.append(func)
+    return func
+
+
+def evento(nome, **dados):
+    """Avisa todos os efeitos. Chame do app, nunca de dentro do post_callback."""
+    if nome == "gravar":
+        ESTADO["gravando"] = True
+        ESTADO["inicio_gravacao"] = time.monotonic()
+    elif nome == "parar":
+        ESTADO["gravando"] = False
+
+    for ouvinte in list(_ouvintes):
+        try:
+            ouvinte(nome, **dados)
+        except Exception as erro:
+            print(f"[efeitos] erro no ouvinte {ouvinte.__module__}: {erro}")
 
 def efeito(nome, label=None, tipo="estrutura"):
     """tipo='cor' para efeitos que reescrevem a cor (sépia, térmico, noite...);

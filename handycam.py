@@ -379,6 +379,7 @@ class Handycam(QWidget):
             self.picam2.stop_encoder()
             self.encoder = None
             self.gravando = False
+            efeitos.evento("parar")
             self.btn_rec.setText("● REC")
             self.btn_rec.setStyleSheet(
                 "QPushButton{background:#211;border:2px solid #f33;"
@@ -399,6 +400,7 @@ class Handycam(QWidget):
                 saida = FfmpegOutput(nome)
             self.picam2.start_encoder(self.encoder, saida, name="main")
             self.gravando = True
+            efeitos.evento("gravar")
             self.t0 = time.monotonic()
             self.blink = True
             self._atualiza_overlay()
@@ -417,6 +419,7 @@ class Handycam(QWidget):
         # Feedback visual imediato: icone de camera azul no canto direito
         # do preview, some sozinho depois de 400 ms.
         self.icone_foto = True
+        efeitos.evento("foto")
         self._atualiza_overlay()
         QTimer.singleShot(400, self._esconde_icone_foto)
 
