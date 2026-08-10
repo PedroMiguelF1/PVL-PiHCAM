@@ -59,7 +59,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
 # forçar mais tarde durante o `import handycam`.
 # ----------------------------------------------------------------------
 
-from qt import Qt, QTimer, QEventLoop, QFont, QApplication, QWidget, QVBoxLayout, QLabel, QProgressBar, FONT_BOLD, ALIGN_CENTER, EXEC
+from qt import QTimer, QEventLoop, QFont, QApplication, QWidget, QVBoxLayout, QLabel, QProgressBar, FONT_BOLD, ALIGN_CENTER, EXEC
 
 class Splash(QWidget):
     def __init__(self):
