@@ -25,8 +25,9 @@ O app abre direto no boot, sem desktop visível
 |---|---|
 | Placa | Raspberry Pi 4B (4 GB) |
 | Câmera | OV5647 IR-Cut |
-| Iluminação | LCD DSI de 4,3 polegadas |
-| Tela | Display touch |
+| Iluminação | LED infravermelho no GPIO 17 |
+| Iluminação | LED infravermelho no GPIO 17 |
+| Tela | Display touch LCD DSI de 4,3 polegadas |
 | Sistema | Raspberry Pi OS Trixie 64-bit (aarch64) |
 
 Deve funcionar em outros modelos de Pi e em outras câmeras suportadas pelo
@@ -60,7 +61,6 @@ O `handyload.py` cria a `QApplication`, mostra a splash e chama o `main()` do
 `handycam.py`.
 
 `start.sh` inicia o `handyload.py`.
-
 ---
 
 ## Iniciar junto com o sistema
