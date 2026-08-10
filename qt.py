@@ -1,9 +1,9 @@
-from PyQt5.QtCore import Qt, QTimer, QDateTime, QEventLoop, QThreadPool, QRunnable, QSize, QObject, pyqtSignal as Signal
-from PyQt5.QtGui import QFont, QKeySequence, QPixmap, QImage, QPainter, QColor, QPen, QIcon 
+from PyQt5.QtCore import Qt, QTimer, QDateTime, QEventLoop, QThreadPool, QRunnable, QSize, QObject, Signal
+from PyQt5.QtGui import QFont, QKeySequence, QPixmap, QImage, QPainter, QColor, QPen, QIcon, QShortcut
 from PyQt5.QtWidgets import (
-    QApplication, QHBoxLayout, QLabel, QPushButton, QShortcut,
-    QVBoxLayout, QWidget, QStackedWidget, QScrollArea, QScroller, QSizePolicy, QProgressBar,
-    QMessageBox, QDialog
+    QApplication, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, 
+    QWidget, QStackedWidget, QScrollArea, QScroller, QSizePolicy, 
+    QProgressBar, QMessageBox, QDialog
     
 )
 
@@ -35,12 +35,11 @@ NO_PEN = _qt_enum(Qt, "PenStyle", "NoPen")
 NO_BRUSH = _qt_enum(Qt, "BrushStyle", "NoBrush")
 ANTIALIAS = _qt_enum(QPainter, "RenderHint", "Antialiasing")
 
-FONT_BOLD = QFont.Bold
-ALIGN_RIGHT = Qt.AlignRight | Qt.AlignVCenter
-ALIGN_CENTER = Qt.AlignCenter
-ALIGN_LEFT = Qt.AlignLeft
-NO_FOCUS = Qt.NoFocus
-APP_SHORTCUT = Qt.ApplicationShortcut
-EXEC = lambda a: a.exec_()
-KEEP_AR = Qt.KeepAspectRatio
-SMOOTH_TRANSFORM = Qt.SmoothTransformation
+FONT_BOLD = _qt_enum(QFont, "Weight", "Bold")
+ALIGN_RIGHT = _qt_enum(Qt, "AlignmentFlag", "AlignRight") | _qt_enum(Qt, "AlignmentFlag", "AlignVCenter")
+ALIGN_CENTER = _qt_enum(Qt, "AlignmentFlag", "AlignCenter")
+ALIGN_LEFT = _qt_enum(Qt, "AlignmentFlag", "AlignLeft")
+NO_FOCUS = _qt_enum(Qt, "FocusPolicy", "NoFocus")
+APP_SHORTCUT = _qt_enum(Qt, "ShortcutContext", "ApplicationShortcut")
+KEEP_AR = _qt_enum(Qt, "AspectRatioMode", "KeepAspectRatio")
+SMOOTH_TRANSFORM = _qt_enum(Qt, "TransformationMode", "SmoothTransformation")
