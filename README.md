@@ -43,7 +43,7 @@ sistema e não existe no PyPI; a versão do pip não enxerga a câmera.
 ```bash
 sudo apt update
 sudo apt install -y \
-    python3-picamera2 python3-pyqt5 python3-opencv \
+    python3-picamera2 python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtwidgets python3-opencv \
     python3-numpy python3-pil python3-gpiozero \
     ffmpeg mpv git
 ```
@@ -180,8 +180,15 @@ log e não interrompe os demais.
 
 Licença
 
+## Licença
+
 Distribuído sob a Licença Apache 2.0.
 
-Uso, modificação e uso comercial são permitidos. Em qualquer redistribuição, com ou sem alterações, é obrigatório manter o aviso de copyright e a cópia da licença, e indicar os arquivos que foram modificados.
+Uso, modificação e uso comercial são permitidos. Em qualquer redistribuição, com ou sem
+alterações, é obrigatório manter o aviso de copyright e a cópia da licença, e indicar
+os arquivos que foram modificados.
+
+> Este projeto usa PySide5 (LGPLv3) para a interface gráfica — não PyQt5 (GPLv3) —
+> justamente para manter compatibilidade com a licença Apache 2.0 do projeto.
 
 Copyright 2026 VitoMiguelF, PedroMiguelF1
