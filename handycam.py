@@ -47,9 +47,13 @@ import cv2
 import numpy as np
 
 from picamera2 import Picamera2, MappedArray # type: ignore
-from picamera2.previews.qt import QGlPicamera2 # type: ignore
 from picamera2.encoders import H264Encoder # type: ignore
 from picamera2.outputs import FfmpegOutput # type: ignore
+from picamera2.previews.q_gl_picamera2 import _get_qglpicamera2
+from picamera2.previews.qt_compatibility import _QT_BINDING
+
+QGlPicamera2 = _get_qglpicamera2(_QT_BINDING.PySide6)
+
 
 # ----------------------------------------------------------------------
 # IMPORTANTE: usar o MESMO binding Qt que o picamera2 usa internamente.
@@ -1391,6 +1395,14 @@ class ViewerWindow(QWidget):
         self.layout().activate()
         self.video_host.winId()
         QApplication.processEvents()
+
+        if self.video_host.height() < 100:
+            if tentativa < 20:
+                QTimer.singleShot(150, lambda: self._tocar_video(caminho, tentativa + 1))
+            else:
+                print("video_host não dimensionou:", self.video_host.size())
+            return
+
         wid = int(self.video_host.winId())
 
         if self.area.height() < 100:

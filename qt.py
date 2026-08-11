@@ -1,9 +1,10 @@
-from PySide6.QtCore import QTimer, QDateTime, QEventLoop, QThreadPool, QRunnable, QSize, QObject, Signal
+from PySide6.QtCore import QTimer, QDateTime, QEventLoop, QThreadPool, QRunnable, QSize, QObject, Signal, Qt
 from PySide6.QtGui import QFont, QKeySequence, QPixmap, QImage, QPainter, QColor, QPen, QIcon, QShortcut
 from PySide6.QtWidgets import (
     QApplication, QHBoxLayout, QLabel, QPushButton,
-    QVBoxLayout, QWidget, QStackedWidget, QScrollArea, QScroller, QSizePolicy, QProgressBar,
-    QMessageBox, QDialog
+    QVBoxLayout, QWidget, QStackedWidget, QScrollArea, 
+    QScroller, QSizePolicy, QProgressBar, QMessageBox, 
+    QDialog
 
 )
 
