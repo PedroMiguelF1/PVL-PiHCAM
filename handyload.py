@@ -66,6 +66,10 @@ from qt import QTimer, QEventLoop, QFont, QApplication, QWidget, QVBoxLayout, QL
 # sys.modules, entao o config e lido uma vez so.
 from temas import qss
 
+# O QFontDatabase precisa da QApplication viva, entao aqui so importamos;
+# quem chama carregar() e o main(), depois de criar o app.
+from fonte import fonte, carregar as carregar_fonte
+
 class Splash(QWidget):
     def __init__(self):
         super().__init__()
@@ -75,12 +79,12 @@ class Splash(QWidget):
         layout.setContentsMargins(60, 40, 60, 50)
 
         self.lbl = QLabel("PVL-PiHCAM")
-        self.lbl.setFont(QFont("DejaVu Sans", 20, FONT_BOLD))
+        self.lbl.setFont(fonte(20, True))
         self.lbl.setStyleSheet(qss("color:$Destaque;"))
         self.lbl.setAlignment(ALIGN_CENTER)
 
         self.lbl_etapa = QLabel("")
-        self.lbl_etapa.setFont(QFont("DejaVu Sans", 11))
+        self.lbl_etapa.setFont(fonte(11))
         self.lbl_etapa.setStyleSheet(qss("color:$FontFraca;"))
         self.lbl_etapa.setAlignment(ALIGN_CENTER)
 
@@ -115,7 +119,7 @@ def criar_splash():
 
     layout = QVBoxLayout()
     lbl = QLabel("HandyPiCam NoIR")
-    lbl.setFont(QFont("DejaVu Sans", 20, FONT_BOLD))
+    lbl.setFont(fonte(20, True))
     lbl.setStyleSheet(qss("color:$Destaque;"))
     lbl.setAlignment(ALIGN_CENTER)
     layout.addWidget(lbl)
@@ -146,6 +150,7 @@ def garantir_splash_visivel(app, ms=150):
 
 def main():
     app = QApplication(sys.argv)
+    carregar_fonte()          # antes de qualquer widget, senao o splash sai na fonte velha
     splash = Splash()
     splash.showFullScreen()
     garantir_splash_visivel(app)

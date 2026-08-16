@@ -1,5 +1,5 @@
 from PySide6.QtCore import QTimer, QDateTime, QEventLoop,QThread, QThreadPool, QRunnable, QSize, QObject, Signal, Qt
-from PySide6.QtGui import QFont, QKeySequence, QPixmap, QImage, QPainter, QColor, QPen, QIcon, QShortcut
+from PySide6.QtGui import QFont, QKeySequence, QPixmap, QImage, QPainter, QColor, QPen, QIcon, QShortcut, QFontDatabase
 from PySide6.QtWidgets import (
     QApplication, QHBoxLayout, QLabel, QPushButton,
     QVBoxLayout, QWidget, QStackedWidget, QScrollArea, 

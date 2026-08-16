@@ -76,6 +76,8 @@ import efeitos
 import temas
 from temas import C, qss
 
+from fonte import fonte, carregar as carregar_fonte
+
 # ----------------------------------------------------------------------
 # Configuração
 # ----------------------------------------------------------------------
@@ -216,7 +218,7 @@ class Handycam(QWidget):
         # status: agora e desenhado por cima do preview em _atualiza_overlay().
 
         self.lbl_clock = QLabel("")
-        self.lbl_clock.setFont(QFont("DejaVu Sans", 13))
+        self.lbl_clock.setFont(fonte(13))
         self.lbl_clock.setAlignment(ALIGN_LEFT)
         self.timer_relogio = QTimer(self)
         self.timer_relogio.timeout.connect(self._atualiza_relogio)
@@ -225,11 +227,11 @@ class Handycam(QWidget):
 
 
         self.lbl_modo = QLabel("")
-        self.lbl_modo.setFont(QFont("DejaVu Sans", 13))
+        self.lbl_modo.setFont(fonte(13))
         self.lbl_modo.setAlignment(ALIGN_RIGHT)
  
         self.lbl_info = QLabel(f"{RESOLUCAO[0]}x{RESOLUCAO[1]} {RESOLUCAO_LABEL} | FPS: {FPS_DIA if not self.noite else FPS_NOITE} ")
-        self.lbl_info.setFont(QFont("DejaVu Sans", 13))
+        self.lbl_info.setFont(fonte(13))
         self.lbl_info.setAlignment(ALIGN_RIGHT)
  
         self.btn_files = QPushButton("≡")
@@ -239,7 +241,7 @@ class Handycam(QWidget):
             "QPushButton:pressed{background:$Principal; border:2px solid $Font;}"
         ))
         self.btn_files.setFixedSize(50, 50)
-        self.btn_files.setFont(QFont("DejaVu Sans", 13, FONT_BOLD))
+        self.btn_files.setFont(fonte(13, True))
         self.btn_files.setFocusPolicy(NO_FOCUS)
 
         
@@ -250,7 +252,7 @@ class Handycam(QWidget):
             "QPushButton:pressed{background:$Principal; border:2px solid $Font;}"
         ))
         self.btn_conf.setFixedSize(50, 50)
-        self.btn_conf.setFont(QFont("DejaVu Sans", 15, FONT_BOLD))
+        self.btn_conf.setFont(fonte(15, True))
         self.btn_conf.setFocusPolicy(NO_FOCUS)
 
         status = QHBoxLayout()
@@ -272,7 +274,7 @@ class Handycam(QWidget):
 
         for b in (self.btn_modo, self.btn_sair, self.btn_rec, self.btn_photo):
             b.setMinimumHeight(64)
-            b.setFont(QFont("DejaVu Sans", 15, FONT_BOLD))
+            b.setFont(fonte(15, True))
             b.setFocusPolicy(NO_FOCUS)
 
         self.btn_modo.setStyleSheet(qss(
@@ -561,7 +563,7 @@ class Handycam(QWidget):
         if self.gravando:
             seg = int(time.monotonic() - self.t0)
             texto = f"REC  {seg // 60:02d}:{seg % 60:02d}"
-            p.setFont(QFont("DejaVu Sans", 16, FONT_BOLD))
+            p.setFont(fonte(16, True))
             fm = p.fontMetrics()
             try:
                 tw = fm.horizontalAdvance(texto)
@@ -648,10 +650,10 @@ class DialogoUpdate(QDialog):
         self.lbl = QLabel("Conectando...")
         self.lbl.setAlignment(Qt.AlignCenter)
         self.lbl.setWordWrap(True)
-        self.lbl.setFont(QFont("DejaVu Sans", 12))
+        self.lbl.setFont(fonte(12))
 
         self.btn = QPushButton("OK")
-        self.btn.setFont(QFont("DejaVu Sans", 12))
+        self.btn.setFont(fonte(12))
         self.btn.setMinimumHeight(56)
         self.btn.setStyleSheet(qss("QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
         "border-radius:10px;color:$Font;padding:6px 18px;}"
@@ -694,7 +696,7 @@ class Configura(QWidget):
         layout.setContentsMargins(9, 9, 9, 9)
 
         lbl_titulo = QLabel("Configurações PVL-PiHCAM")
-        lbl_titulo.setFont(QFont("DejaVu Sans", 15))
+        lbl_titulo.setFont(fonte(15))
 
         btn_update = self._criar_botao_update()
 
@@ -726,7 +728,7 @@ class Configura(QWidget):
         ))
 
         lbl_sub1 = QLabel("Resolução e FPS")
-        lbl_sub1.setFont(QFont("DejaVu Sans", 12))
+        lbl_sub1.setFont(fonte(12))
         conteudo.addWidget(lbl_sub1)
 
         self.botoes_resolucao = []
@@ -740,7 +742,7 @@ class Configura(QWidget):
             btn = QPushButton(label)
             btn.setCheckable(True)
             btn.setMinimumHeight(64)
-            btn.setFont(QFont("DejaVu Sans", 12))
+            btn.setFont(fonte(12))
             btn.setFocusPolicy(NO_FOCUS)
             if largura == self.config.get("resolucao", [1280, 720])[0] and altura == self.config.get("resolucao", [1280, 720])[1]:
                 btn.setStyleSheet(BTN_ON)
@@ -754,7 +756,7 @@ class Configura(QWidget):
 
 
         lbl_sub2 = QLabel("FPS (frames por segundo)")
-        lbl_sub2.setFont(QFont("DejaVu Sans", 12))
+        lbl_sub2.setFont(fonte(12))
         conteudo.addWidget(lbl_sub2)
 
         self.botoes_fps = []
@@ -768,7 +770,7 @@ class Configura(QWidget):
             btn = QPushButton(f"{fps} FPS")
             btn.setCheckable(True)
             btn.setMinimumHeight(64)
-            btn.setFont(QFont("DejaVu Sans", 12))
+            btn.setFont(fonte(12))
             btn.setFocusPolicy(NO_FOCUS)
             if fps == self.config.get("fps"):
                 btn.setStyleSheet(BTN_ON)
@@ -783,7 +785,7 @@ class Configura(QWidget):
 
 
         lbl_sub3 = QLabel("Efeito de imagem")
-        lbl_sub3.setFont(QFont("DejaVu Sans", 12))
+        lbl_sub3.setFont(fonte(12))
         conteudo.addWidget(lbl_sub3)
 
         # (nome_interno, texto_do_botao) — None = sem efeito
@@ -805,7 +807,7 @@ class Configura(QWidget):
             btn = QPushButton(label)
             btn.setCheckable(True)
             btn.setMinimumHeight(64)
-            btn.setFont(QFont("DejaVu Sans", 12))
+            btn.setFont(fonte(12))
             btn.setFocusPolicy(NO_FOCUS)
             btn.setChecked(nome == atual)
             btn.setStyleSheet(BTN_ON if nome == atual else BTN_OFF)
@@ -818,7 +820,7 @@ class Configura(QWidget):
 
 
         lbl_sub4 = QLabel("Tema")
-        lbl_sub4.setFont(QFont("DejaVu Sans", 12))
+        lbl_sub4.setFont(fonte(12))
         conteudo.addWidget(lbl_sub4)
 
         self.botoes_tema = []
@@ -834,7 +836,7 @@ class Configura(QWidget):
             btn = QPushButton(info["label"])
             btn.setCheckable(True)
             btn.setMinimumHeight(64)
-            btn.setFont(QFont("DejaVu Sans", 12))
+            btn.setFont(fonte(12))
             btn.setFocusPolicy(NO_FOCUS)
             btn.setChecked(nome == tema_atual)
             btn.setStyleSheet(BTN_ON if nome == tema_atual else BTN_OFF)
@@ -853,7 +855,7 @@ class Configura(QWidget):
 
         # --- Aviso + botões fixos embaixo, fora do scroll ---
         self.lbl_aviso = QLabel("")
-        self.lbl_aviso.setFont(QFont("DejaVu Sans", 9))
+        self.lbl_aviso.setFont(fonte(9))
         self.lbl_aviso.setStyleSheet(qss("color:$Alerta;"))
         layout.addWidget(self.lbl_aviso)
 
@@ -861,7 +863,7 @@ class Configura(QWidget):
 
         btn_voltar = QPushButton("← Voltar")
         btn_voltar.setMinimumHeight(64)
-        btn_voltar.setFont(QFont("DejaVu Sans", 15))
+        btn_voltar.setFont(fonte(15))
         btn_voltar.setFocusPolicy(NO_FOCUS)
         btn_voltar.setStyleSheet(qss(
             "QPushButton{background:$PrincipalMedio;border:2px solid $Font;"
@@ -872,7 +874,7 @@ class Configura(QWidget):
 
         btn_aplicar = QPushButton("↻ Aplicar e Reiniciar")
         btn_aplicar.setMinimumHeight(64)
-        btn_aplicar.setFont(QFont("DejaVu Sans", 15))
+        btn_aplicar.setFont(fonte(15))
         btn_aplicar.setFocusPolicy(NO_FOCUS)
         btn_aplicar.setStyleSheet(qss(
             "QPushButton{background:$DestaqueMedio;border:2px solid $Destaque;"
@@ -892,7 +894,7 @@ class Configura(QWidget):
     def _criar_botao_update(self):
         btn = QPushButton("⛁ Atualizar")
         btn.setMinimumHeight(50)
-        btn.setFont(QFont("DejaVu Sans", 15))
+        btn.setFont(fonte(15))
         btn.setFocusPolicy(NO_FOCUS)
         btn.setStyleSheet(qss(
             "QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
@@ -1147,7 +1149,7 @@ class ClickableItem(QWidget):
 def botao_touch(texto, larg=0, alt=48, destaque=False):
     b = QPushButton(texto)
     b.setFocusPolicy(NO_FOCUS)
-    b.setFont(QFont("DejaVu Sans", 13))
+    b.setFont(fonte(13))
     if larg:
         b.setFixedSize(larg, alt)
     else:
@@ -1179,7 +1181,7 @@ class EscolhaOverlay(QWidget):
 
         if titulo:
             lbl = QLabel(titulo)
-            lbl.setFont(QFont("DejaVu Sans", 14, QFont.Bold))
+            lbl.setFont(fonte(14, True))
             lbl.setStyleSheet(qss("color:$FontFraca;"))
             col.addWidget(lbl)
 
@@ -1376,12 +1378,12 @@ class FilesWindow(QWidget):
 
         topo = QHBoxLayout()
         self.lbl_titulo = QLabel("Arquivos Gravados")
-        self.lbl_titulo.setFont(QFont("DejaVu Sans", 15))
+        self.lbl_titulo.setFont(fonte(15))
         topo.addWidget(self.lbl_titulo)
         topo.addStretch()
 
         self.btn_armazens = QPushButton("⛁  Armazenamento")
-        self.btn_armazens.setFont(QFont("DejaVu Sans", 12))
+        self.btn_armazens.setFont(fonte(12))
         self.btn_armazens.setFocusPolicy(NO_FOCUS)
         self.btn_armazens.setFixedHeight(48)
         self.btn_armazens.setStyleSheet(qss(
@@ -1394,12 +1396,12 @@ class FilesWindow(QWidget):
         topo.addWidget(self.btn_armazens)
 
         self.lbl_tamanho = QLabel("")
-        self.lbl_tamanho.setFont(QFont("DejaVu Sans", 12))
+        self.lbl_tamanho.setFont(fonte(12))
         self.lbl_tamanho.setStyleSheet(qss("color:$FontFraca;"))
         topo.addWidget(self.lbl_tamanho)
 
         self.btn_ordem = QPushButton("⇅ Nome")
-        self.btn_ordem.setFont(QFont("DejaVu Sans", 12))
+        self.btn_ordem.setFont(fonte(12))
         self.btn_ordem.setFocusPolicy(NO_FOCUS)
         self.btn_ordem.setFixedHeight(48)
         self.btn_ordem.setMinimumWidth(140)
@@ -1441,7 +1443,7 @@ class FilesWindow(QWidget):
 
         btn_voltar = QPushButton("Voltar")
         btn_voltar.setMinimumHeight(64)
-        btn_voltar.setFont(QFont("DejaVu Sans", 15))
+        btn_voltar.setFont(fonte(15))
         btn_voltar.setFocusPolicy(NO_FOCUS)
         btn_voltar.setStyleSheet(qss(
             "QPushButton{background:$PrincipalMedio;border:2px solid $Font;"
@@ -1573,7 +1575,7 @@ class FilesWindow(QWidget):
 
         if not pastas and not arquivos:
             lbl_vazio = QLabel("Nenhum arquivo encontrado.")
-            lbl_vazio.setFont(QFont("DejaVu Sans", 15))
+            lbl_vazio.setFont(fonte(15))
             lbl_vazio.setStyleSheet(qss("color:$FontFraca;"))
             self.files_layout.addWidget(lbl_vazio)
 
@@ -1605,11 +1607,11 @@ class FilesWindow(QWidget):
                 QThreadPool.globalInstance().start(worker)
 
             lbl_arquivo = QLabel(arquivo)
-            lbl_arquivo.setFont(QFont("DejaVu Sans", 12))
+            lbl_arquivo.setFont(fonte(12))
             lbl_arquivo.setStyleSheet("background:transparent; border:none;")
 
             btn_options = QPushButton("≡")
-            btn_options.setFont(QFont("DejaVu Sans", 12))
+            btn_options.setFont(fonte(12))
             btn_options.setFocusPolicy(NO_FOCUS)
             btn_options.setStyleSheet(qss(
                 "QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
@@ -1648,11 +1650,11 @@ class FilesWindow(QWidget):
         icone = QLabel("⛀")
         icone.setFixedSize(125, 75)
         icone.setAlignment(Qt.AlignCenter)
-        icone.setFont(QFont("DejaVu Sans", 22))
+        icone.setFont(fonte(22))
         icone.setStyleSheet("background:transparent; border:none;")
 
         nome = QLabel(texto)
-        nome.setFont(QFont("DejaVu Sans", 12))
+        nome.setFont(fonte(12))
         nome.setStyleSheet("background:transparent; border:none;")
 
         lay.addWidget(icone)
@@ -1661,7 +1663,7 @@ class FilesWindow(QWidget):
 
         if apagavel:
             btn_x = QPushButton("✕")
-            btn_x.setFont(QFont("DejaVu Sans", 12))
+            btn_x.setFont(fonte(12))
             btn_x.setFocusPolicy(NO_FOCUS)
             btn_x.setFixedSize(55, 55)
             btn_x.setStyleSheet(qss(
@@ -1825,7 +1827,7 @@ class ConfirmOverlay(QWidget):
         col.setSpacing(12)
 
         lbl_t = QLabel(titulo)
-        lbl_t.setFont(QFont("DejaVu Sans", 15, QFont.Bold))
+        lbl_t.setFont(fonte(15, True))
         col.addWidget(lbl_t)
 
         lbl_m = QLabel(mensagem)
@@ -1907,7 +1909,7 @@ class RenameOverlay(QWidget):
         col.setSpacing(12)
 
         titulo = QLabel("Renomear")
-        titulo.setFont(QFont("DejaVu Sans", 15, QFont.Bold))
+        titulo.setFont(fonte(15, True))
         col.addWidget(titulo)
 
         # ---- linha do campo + botão de teclado
@@ -1920,7 +1922,7 @@ class RenameOverlay(QWidget):
         linha.addWidget(self.edit, 1)
 
         lbl_ext = QLabel(self.ext)
-        lbl_ext.setFont(QFont("DejaVu Sans", 14))
+        lbl_ext.setFont(fonte(14))
         lbl_ext.setStyleSheet(qss("color:$FontFraca;"))
         linha.addWidget(lbl_ext)
 
@@ -2040,7 +2042,7 @@ class MoveOverlay(QWidget):
         col.setSpacing(10)
 
         self.titulo = QLabel("Mover")
-        self.titulo.setFont(QFont("DejaVu Sans", 15, QFont.Bold))
+        self.titulo.setFont(fonte(15, True))
         col.addWidget(self.titulo)
 
         self.lbl_arq = QLabel(self.nome)
@@ -2243,7 +2245,7 @@ class ViewerWindow(QWidget):
         self.setStyleSheet(qss("background:$Preto; color:$Font;"))
 
         self.lbl_nome = QLabel("")
-        self.lbl_nome.setFont(QFont("DejaVu Sans", 12))
+        self.lbl_nome.setFont(fonte(12))
         self.lbl_nome.setStyleSheet(qss("color:$FontFraca; padding:4px;"))
 
         # host do vídeo: QWidget puro, janela X11 nativa pro mpv
@@ -2268,7 +2270,7 @@ class ViewerWindow(QWidget):
 
         # --- timestamp ---
         self.lbl_tempo = QLabel("00:00 / 00:00")
-        self.lbl_tempo.setFont(QFont("DejaVu Sans", 13))
+        self.lbl_tempo.setFont(fonte(13))
         self.lbl_tempo.setAlignment(ALIGN_CENTER)
         self.lbl_tempo.setStyleSheet(qss("color:$Destaque; padding:2px;"))
 
@@ -2288,7 +2290,7 @@ class ViewerWindow(QWidget):
         for b in (self.btn_play, self.btn_ret, self.btn_avc,
                   self.btn_vol_menos, self.btn_vol_mais):
             b.setMinimumHeight(56)
-            b.setFont(QFont("DejaVu Sans", 14, FONT_BOLD))
+            b.setFont(fonte(14, True))
             b.setFocusPolicy(NO_FOCUS)
             b.setStyleSheet(estilo_ctrl)
 
@@ -2305,7 +2307,7 @@ class ViewerWindow(QWidget):
 
         btn_voltar = QPushButton("Voltar")
         btn_voltar.setMinimumHeight(56)
-        btn_voltar.setFont(QFont("DejaVu Sans", 15))
+        btn_voltar.setFont(fonte(15))
         btn_voltar.setFocusPolicy(NO_FOCUS)
         btn_voltar.setStyleSheet(qss(
             "QPushButton{background:$PrincipalMedio;border:2px solid $Font;"
@@ -2529,6 +2531,10 @@ def main(app=None, splash=None):
     criou_app_aqui = app is None
     if criou_app_aqui:
         app = QApplication(sys.argv)
+
+    # Rodando pelo handyload.py a fonte ja foi carregada la; carregar()
+    # e idempotente, entao aqui so tem efeito no `python3 handycam.py`.
+    carregar_fonte()
 
     win = Handycam(picam2)
     win.resize(800, 480)
