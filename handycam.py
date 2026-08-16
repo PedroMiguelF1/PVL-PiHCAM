@@ -73,6 +73,7 @@ from handyupdate import AtualizadorWorker
 
 import efeitos
 
+import temas
 from temas import C, qss
 
 # ----------------------------------------------------------------------
@@ -153,14 +154,14 @@ PASTA_THUMBS = os.path.join(PASTA_SAIDA, ".thumbs")  # cache das thumbnails
 SUBPASTA_USB = os.path.join("Handycam", "Media")
 
 BTN_ON = qss("QPushButton{background:$DestaqueBaixo;border:2px solid $Destaque;"
-              "border-radius:10px;color:#fff;padding:6px 18px;}"
-              "QPushButton:pressed{background:#333;}"
-              "QPushButton:checked{background:#346;border:2px solid #7ef;color:#fff;}")
+              "border-radius:10px;color:$Font;padding:6px 18px;}"
+              "QPushButton:pressed{background:$Principal;}"
+              "QPushButton:checked{background:$DestaqueMedio;border:2px solid $DestaqueAlto;color:$Font;}")
     
-BTN_OFF = ("QPushButton{background:#222;border:2px solid #333;"
-        "border-radius:10px;color:#fff;padding:6px 18px;}"
-        "QPushButton:pressed{background:#333;}"
-        "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}")
+BTN_OFF = qss("QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
+        "border-radius:10px;color:$Font;padding:6px 18px;}"
+        "QPushButton:pressed{background:$Principal;}"
+        "QPushButton:checked{background:$PrincipalAlto;border:2px solid $Font;color:$Font;}")
 
 os.makedirs(PASTA_THUMBS, exist_ok=True)
 
@@ -205,10 +206,11 @@ class Handycam(QWidget):
 
 
         self.setWindowTitle("PVL-PiHCAM")
-        self.setStyleSheet("background:#111; color:#eee;")
+        self.setStyleSheet(qss("background:$PrincipalBaixo; color:$Font;"))
 
         self.preview = QGlPicamera2(picam2, width=RESOLUCAO[0],
-                                    height=RESOLUCAO[1], keep_ar=True)
+                                    height=RESOLUCAO[1], keep_ar=True,
+                                    bg_colour=temas.rgb("PreviewBG"))
 
         # O REC (ponto piscando + cronometro) nao fica mais na barra de
         # status: agora e desenhado por cima do preview em _atualiza_overlay().
@@ -231,22 +233,22 @@ class Handycam(QWidget):
         self.lbl_info.setAlignment(ALIGN_RIGHT)
  
         self.btn_files = QPushButton("≡")
-        self.btn_files.setStyleSheet(
-            "QPushButton{background:#222;border:2px solid #333;"
-            "border-radius:10px;color:#fff;}"
-            "QPushButton:pressed{background:#333; border:2px solid #fff;}"
-        )
+        self.btn_files.setStyleSheet(qss(
+            "QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
+            "border-radius:10px;color:$Font;}"
+            "QPushButton:pressed{background:$Principal; border:2px solid $Font;}"
+        ))
         self.btn_files.setFixedSize(50, 50)
         self.btn_files.setFont(QFont("DejaVu Sans", 13, FONT_BOLD))
         self.btn_files.setFocusPolicy(NO_FOCUS)
 
         
         self.btn_conf = QPushButton("⚙")
-        self.btn_conf.setStyleSheet(
-            "QPushButton{background:#222;border:2px solid #333;"
-            "border-radius:10px;color:#fff;}"
-            "QPushButton:pressed{background:#333; border:2px solid #fff;}"
-        )
+        self.btn_conf.setStyleSheet(qss(
+            "QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
+            "border-radius:10px;color:$Font;}"
+            "QPushButton:pressed{background:$Principal; border:2px solid $Font;}"
+        ))
         self.btn_conf.setFixedSize(50, 50)
         self.btn_conf.setFont(QFont("DejaVu Sans", 15, FONT_BOLD))
         self.btn_conf.setFocusPolicy(NO_FOCUS)
@@ -262,7 +264,7 @@ class Handycam(QWidget):
         self.btn_rec = QPushButton("● REC")
 
         self.btn_photo = QPushButton(" FOTO")
-        self.btn_photo.setIcon(self._icone_camera_btn("#5bf", 64))
+        self.btn_photo.setIcon(self._icone_camera_btn(C["Destaque"], 64))
         self.btn_photo.setIconSize(QSize(32, 24))
 
         self.btn_modo = QPushButton("☾ NOITE")
@@ -273,27 +275,27 @@ class Handycam(QWidget):
             b.setFont(QFont("DejaVu Sans", 15, FONT_BOLD))
             b.setFocusPolicy(NO_FOCUS)
 
-        self.btn_modo.setStyleSheet(
-            "QPushButton{background:#121;border:2px solid #5f5;"
-            "border-radius:10px;color:#5f5;padding:6px 18px;}"
-            "QPushButton:pressed{background:#131;}"
-        )
-        self.btn_rec.setStyleSheet(
-            "QPushButton{background:#211;border:2px solid #f33;"
-            "border-radius:10px;color:#f33;padding:6px 18px;}"
-            "QPushButton:pressed{background:#511;}"
-        )
+        self.btn_modo.setStyleSheet(qss(
+            "QPushButton{background:$PositivoBaixo;border:2px solid $Positivo;"
+            "border-radius:10px;color:$Positivo;padding:6px 18px;}"
+            "QPushButton:pressed{background:$PositivoMedio;}"
+        ))
+        self.btn_rec.setStyleSheet(qss(
+            "QPushButton{background:$NegativoBaixo;border:2px solid $Negativo;"
+            "border-radius:10px;color:$Negativo;padding:6px 18px;}"
+            "QPushButton:pressed{background:$NegativoMedio;}"
+        ))
 
-        self.btn_sair.setStyleSheet(
-            "QPushButton{background:#222;border:2px solid #fff;"
-            "border-radius:10px;color:#fff;padding:6px 18px;}"
-            "QPushButton:pressed{background:#333;}"
-        )
-        self.btn_photo.setStyleSheet(
-            "QPushButton{background:#112;border:2px solid #5bf;"
-            "border-radius:10px;color:#5bf;padding:6px 18px;}"
-            "QPushButton:pressed{background:#135;}"
-        )
+        self.btn_sair.setStyleSheet(qss(
+            "QPushButton{background:$PrincipalMedio;border:2px solid $Font;"
+            "border-radius:10px;color:$Font;padding:6px 18px;}"
+            "QPushButton:pressed{background:$Principal;}"
+        ))
+        self.btn_photo.setStyleSheet(qss(
+            "QPushButton{background:$DestaqueBaixo;border:2px solid $Destaque;"
+            "border-radius:10px;color:$Destaque;padding:6px 18px;}"
+            "QPushButton:pressed{background:$DestaqueMedio;}"
+        ))
 
         botoes = QHBoxLayout()
         botoes.addWidget(self.btn_rec, 2)
@@ -366,13 +368,13 @@ class Handycam(QWidget):
         self.noite = False
         efeitos.definir_noite(self.noite)
         self.btn_modo.setText("☾ NOITE")
-        self.btn_modo.setStyleSheet(
-            "QPushButton{background:#121;border:2px solid #5f5;"
-            "border-radius:10px;color:#5f5;padding:6px 18px;}"
-            "QPushButton:pressed{background:#141;}"
-        )   
+        self.btn_modo.setStyleSheet(qss(
+            "QPushButton{background:$PositivoBaixo;border:2px solid $Positivo;"
+            "border-radius:10px;color:$Positivo;padding:6px 18px;}"
+            "QPushButton:pressed{background:$PositivoMedio;}"
+        ))   
         self.lbl_modo.setText("☀  DIA")
-        self.lbl_modo.setStyleSheet("color:#fd7; padding-right:6px;")
+        self.lbl_modo.setStyleSheet(qss("color:$Alerta; padding-right:6px;"))
 
     def modo_noite(self):
         infra_red.on()
@@ -387,13 +389,13 @@ class Handycam(QWidget):
         self.noite = True
         efeitos.definir_noite(self.noite)
         self.btn_modo.setText("☀ DIA")
-        self.btn_modo.setStyleSheet(
-            "QPushButton{background:#321;border:2px solid #fd7;"
-            "border-radius:10px;color:#fd7;padding:6px 18px;}"
-            "QPushButton:pressed{background:#541;}"
-        )
+        self.btn_modo.setStyleSheet(qss(
+            "QPushButton{background:$AlertaBaixo;border:2px solid $Alerta;"
+            "border-radius:10px;color:$Alerta;padding:6px 18px;}"
+            "QPushButton:pressed{background:$AlertaMedio;}"
+        ))
         self.lbl_modo.setText("☾  NOITE")
-        self.lbl_modo.setStyleSheet("color:#5f5; padding-right:6px;")
+        self.lbl_modo.setStyleSheet(qss("color:$Positivo; padding-right:6px;"))
 
     def toggle_modo(self):
         self.modo_dia() if self.noite else self.modo_noite()
@@ -405,11 +407,11 @@ class Handycam(QWidget):
             self.gravando = False
             efeitos.evento("parar")
             self.btn_rec.setText("● REC")
-            self.btn_rec.setStyleSheet(
-                "QPushButton{background:#211;border:2px solid #f33;"
-                "border-radius:10px;color:#f33;padding:6px 18px;}"
-                "QPushButton:pressed{background:#611;}"
-            )
+            self.btn_rec.setStyleSheet(qss(
+                "QPushButton{background:$NegativoBaixo;border:2px solid $Negativo;"
+                "border-radius:10px;color:$Negativo;padding:6px 18px;}"
+                "QPushButton:pressed{background:$NegativoBaixo;}"
+            ))
             self.blink = False
             self._atualiza_overlay()
             self.files_window.marcar_sujo()
@@ -429,11 +431,11 @@ class Handycam(QWidget):
             self.blink = True
             self._atualiza_overlay()
             self.btn_rec.setText("■ STOP")
-            self.btn_rec.setStyleSheet(
-                "QPushButton{background:#211;border:2px solid #a11;"
-                "border-radius:10px;color:#a11;padding:6px 18px;}"
-                "QPushButton:pressed{background:#411;}"
-            )
+            self.btn_rec.setStyleSheet(qss(
+                "QPushButton{background:$NegativoMedio;border:2px solid $NegativoFraco;"
+                "border-radius:10px;color:$NegativoFraco;padding:6px 18px;}"
+                "QPushButton:pressed{background:$NegativoMedio;}"
+            ))
             print("Gravando:", nome)
 
     def take_photo(self):
@@ -475,9 +477,9 @@ class Handycam(QWidget):
     # entao QLabel filho nao aparece por cima dele. O jeito certo e mandar
     # um array RGBA para o proprio preview, que a GPU compoe sobre a imagem.
     # ------------------------------------------------------------------
-    def _desenha_icone_camera(self, p, x, y, w=40, h=30, cor="#5bf"):
+    def _desenha_icone_camera(self, p, x, y, w=40, h=30, cor=None):
         """Mesmo desenho do CameraIcon, mas num QPainter ja existente."""
-        cor = QColor(cor)
+        cor = QColor(cor or C["Destaque"])
         caneta = QPen(cor)
         caneta.setWidth(2)
         p.setPen(caneta)
@@ -497,7 +499,8 @@ class Handycam(QWidget):
         cx, cy = int(x + w // 2), int(y + corpo_y + corpo_h // 2)
         p.drawEllipse(cx - raio, cy - raio, raio * 2, raio * 2)
 
-    def _icone_camera_btn(self, cor="#eee", tamanho=64):
+    def _icone_camera_btn(self, cor=None, tamanho=64):
+        cor = cor or C["Font"]
         pm = QPixmap(tamanho, tamanho)
         pm.fill(Qt.transparent)
 
@@ -576,11 +579,11 @@ class Handycam(QWidget):
  
             # ponto vermelho piscando
             if self.blink:
-                p.setBrush(QColor("#f33"))
+                p.setBrush(QColor(C["Negativo"]))
                 p.drawEllipse(cx + 10, cy + (ch - 14) // 2, 14, 14)
  
             # cronometro (alterna o tom junto com o ponto)
-            p.setPen(QColor("#f33") if self.blink else QColor("#a11"))
+            p.setPen(QColor(C["Negativo"]) if self.blink else QColor(C["NegativoFraco"]))
             p.drawText(cx + 34, cy + 5 + fm.ascent(), texto)
  
         if self.icone_foto:
@@ -640,7 +643,7 @@ class DialogoUpdate(QDialog):
         self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
         self.setModal(True)
         self.setFixedSize(440, 240)
-        self.setStyleSheet("background:#1b1b1b; color:#eee;")
+        self.setStyleSheet(qss("background:$Cartao; color:$Font;"))
 
         self.lbl = QLabel("Conectando...")
         self.lbl.setAlignment(Qt.AlignCenter)
@@ -650,11 +653,11 @@ class DialogoUpdate(QDialog):
         self.btn = QPushButton("OK")
         self.btn.setFont(QFont("DejaVu Sans", 12))
         self.btn.setMinimumHeight(56)
-        self.btn.setStyleSheet("QPushButton{background:#222;border:2px solid #333;"
-        "border-radius:10px;color:#fff;padding:6px 18px;}"
-        "QPushButton:pressed{background:#333;}"
-        "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}"
-        )
+        self.btn.setStyleSheet(qss("QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
+        "border-radius:10px;color:$Font;padding:6px 18px;}"
+        "QPushButton:pressed{background:$Principal;}"
+        "QPushButton:checked{background:$PrincipalAlto;border:2px solid $Font;color:$Font;}"
+        ))
         self.btn.clicked.connect(self.accept)
         self.btn.hide()   # só aparece quando termina
 
@@ -678,12 +681,13 @@ class Configura(QWidget):
         super().__init__(parent)
         self.parent_app = parent
 
-        self.setStyleSheet("background:#111; color:#eee;")
+        self.setStyleSheet(qss("background:$PrincipalBaixo; color:$Font;"))
 
         self.config = self.carregar_config()
         self.config_inicial = dict(self.config)  # cópia pra comparar depois (aviso de "mudou")
         self.msgR = f'{self.config["resolucao"][0]}x{self.config["resolucao"][1]}'
         self.msgFPS = f'{self.config["fps"]} FPS'
+        self.msgTema = self._label_tema(self.config.get("tema"))
 
         layout = QVBoxLayout()
         layout.setSpacing(14)
@@ -707,19 +711,19 @@ class Configura(QWidget):
         self.scroll_area.viewport().setAttribute(Qt.WA_AcceptTouchEvents, True)
         QScroller.grabGesture(self.scroll_area.viewport(),
                       QScroller.LeftMouseButtonGesture)
-        self.scroll_area.setStyleSheet(
-            "QScrollArea{border:none; background:#111; padding: 6px;}"
-            "QScrollBar:vertical{background:#111; width:10px;}"
-            "QScrollBar::handle:vertical{background:#fff;}"
-        )
+        self.scroll_area.setStyleSheet(qss(
+            "QScrollArea{border:none; background:$PrincipalBaixo; padding: 6px;}"
+            "QScrollBar:vertical{background:$PrincipalBaixo; width:10px;}"
+            "QScrollBar::handle:vertical{background:$Font;}"
+        ))
 
         self.config_container = QWidget()
         conteudo = QVBoxLayout(self.config_container)
         conteudo.setSpacing(14)
         conteudo.setContentsMargins(10, 10, 10, 10)
-        self.config_container.setStyleSheet(
-            "background:#111; border:1px solid #333; border-radius:5px; padding:10px;"
-        )
+        self.config_container.setStyleSheet(qss(
+            "background:$PrincipalBaixo; border:1px solid $Principal; border-radius:5px; padding:10px;"
+        ))
 
         lbl_sub1 = QLabel("Resolução e FPS")
         lbl_sub1.setFont(QFont("DejaVu Sans", 12))
@@ -813,6 +817,35 @@ class Configura(QWidget):
             self.botoes_efeito.append((btn, nome))
 
 
+        lbl_sub4 = QLabel("Tema")
+        lbl_sub4.setFont(QFont("DejaVu Sans", 12))
+        conteudo.addWidget(lbl_sub4)
+
+        self.botoes_tema = []
+        tema_atual = self.config.get("tema", temas.PADRAO)
+        linha = None
+
+        for i, (nome, info) in enumerate(sorted(
+                temas.TEMAS.items(), key=lambda kv: kv[1]["label"])):
+            if i % 3 == 0:
+                linha = QHBoxLayout()
+                conteudo.addLayout(linha)
+
+            btn = QPushButton(info["label"])
+            btn.setCheckable(True)
+            btn.setMinimumHeight(64)
+            btn.setFont(QFont("DejaVu Sans", 12))
+            btn.setFocusPolicy(NO_FOCUS)
+            btn.setChecked(nome == tema_atual)
+            btn.setStyleSheet(BTN_ON if nome == tema_atual else BTN_OFF)
+
+            btn.clicked.connect(
+                lambda checked, n=nome, b=btn: self.selecionar_tema(n, b)
+            )
+            linha.addWidget(btn)
+            self.botoes_tema.append((btn, nome))
+
+
         conteudo.addStretch()
         self.config_container.setLayout(conteudo)
         self.scroll_area.setWidget(self.config_container)
@@ -821,7 +854,7 @@ class Configura(QWidget):
         # --- Aviso + botões fixos embaixo, fora do scroll ---
         self.lbl_aviso = QLabel("")
         self.lbl_aviso.setFont(QFont("DejaVu Sans", 9))
-        self.lbl_aviso.setStyleSheet("color:#fd7;")
+        self.lbl_aviso.setStyleSheet(qss("color:$Alerta;"))
         layout.addWidget(self.lbl_aviso)
 
         linha_botoes = QHBoxLayout()
@@ -830,11 +863,11 @@ class Configura(QWidget):
         btn_voltar.setMinimumHeight(64)
         btn_voltar.setFont(QFont("DejaVu Sans", 15))
         btn_voltar.setFocusPolicy(NO_FOCUS)
-        btn_voltar.setStyleSheet(
-            "QPushButton{background:#222;border:2px solid #fff;"
-            "border-radius:10px;color:#fff;padding:6px 18px;}"
-            "QPushButton:pressed{background:#333;}"
-        )
+        btn_voltar.setStyleSheet(qss(
+            "QPushButton{background:$PrincipalMedio;border:2px solid $Font;"
+            "border-radius:10px;color:$Font;padding:6px 18px;}"
+            "QPushButton:pressed{background:$Principal;}"
+        ))
         btn_voltar.clicked.connect(self.voltar)
 
         btn_aplicar = QPushButton("↻ Aplicar e Reiniciar")
@@ -861,11 +894,11 @@ class Configura(QWidget):
         btn.setMinimumHeight(50)
         btn.setFont(QFont("DejaVu Sans", 15))
         btn.setFocusPolicy(NO_FOCUS)
-        btn.setStyleSheet(
-            "QPushButton{background:#222;border:2px solid #333;"
-            "border-radius:10px;color:#fff;padding:6px 18px;}"
-            "QPushButton:pressed{background:#346;border:2px solid #7ef;color:#fff;}"
-        )
+        btn.setStyleSheet(qss(
+            "QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
+            "border-radius:10px;color:$Font;padding:6px 18px;}"
+            "QPushButton:pressed{background:$DestaqueMedio;border:2px solid $DestaqueAlto;color:$Font;}"
+        ))
         btn.clicked.connect(self.atualizar_app)
         return btn
 
@@ -911,10 +944,11 @@ class Configura(QWidget):
         mudou = (
             self.config.get("resolucao") != self.config_inicial.get("resolucao")
             or self.config.get("fps") != self.config_inicial.get("fps")
+            or self.config.get("tema") != self.config_inicial.get("tema")
         )
         if mudou:
             self.lbl_aviso.setText(
-                f"Selecionado: {self.msgR} {self.msgFPS} — clique em "
+                f"Selecionado: {self.msgR} {self.msgFPS} | {self.msgTema} — clique em "
                 f"\"Aplicar e Reiniciar\" para usar."
             )
         else:
@@ -951,6 +985,23 @@ class Configura(QWidget):
         self.config["efeito"] = nome
         self.salvar_config()                  # o mesmo que grava ~/.handycam_config.json
 
+    def _label_tema(self, nome):
+        info = temas.TEMAS.get(nome) or temas.TEMAS[temas.PADRAO]
+        return info["label"]
+
+    def selecionar_tema(self, nome, botao):
+        # Diferente do efeito, o tema NÃO troca na hora: BTN_ON/BTN_OFF e os
+        # stylesheets das telas são montados no import do handycam.py, então
+        # só o os.execv aplica as cores novas.
+        for b, n in self.botoes_tema:
+            b.setChecked(n == nome)
+            b.setStyleSheet(BTN_ON if n == nome else BTN_OFF)
+
+        self.config["tema"] = nome
+        self.salvar_config()
+        self.msgTema = self._label_tema(nome)
+        self.atualizar_aviso()
+
     def marcar_selecionado(self):
         atual_res = self.config.get("resolucao")
         for btn, l, a in self.botoes_resolucao:
@@ -959,6 +1010,10 @@ class Configura(QWidget):
         atual_fps = self.config.get("fps")
         for btn, f in self.botoes_fps:
             btn.setChecked(atual_fps == f)
+
+        atual_tema = self.config.get("tema", temas.PADRAO)
+        for btn, n in self.botoes_tema:
+            btn.setChecked(n == atual_tema)
 
 
     def carregar_config(self):
@@ -969,10 +1024,12 @@ class Configura(QWidget):
                     cfg.setdefault("resolucao", [1280, 720])
                     cfg.setdefault("fps", 24)
                     cfg.setdefault("efeito", None)
+                    cfg.setdefault("tema", temas.PADRAO)
                     return cfg
             except (json.JSONDecodeError, OSError):
                 pass
-        return {"resolucao": [1280, 720], "fps": 24, "efeito": None}
+        return {"resolucao": [1280, 720], "fps": 24, "efeito": None,
+                "tema": temas.PADRAO}
 
     def salvar_config(self):
         try:
@@ -1112,10 +1169,10 @@ class EscolhaOverlay(QWidget):
         card = QFrame()
         card.setObjectName("card")
         card.setFixedWidth(min(560, max(320, parent.width() - 60)))
-        card.setStyleSheet(
-            "#card{background:#1b1b1b;border:2px solid #444;border-radius:16px;}"
-            "QLabel{color:#fff;}"
-        )
+        card.setStyleSheet(qss(
+            "#card{background:$Cartao;border:2px solid $PrincipalAlto;border-radius:16px;}"
+            "QLabel{color:$Font;}"
+        ))
         col = QVBoxLayout(card)
         col.setContentsMargins(18, 16, 18, 16)
         col.setSpacing(8)
@@ -1123,7 +1180,7 @@ class EscolhaOverlay(QWidget):
         if titulo:
             lbl = QLabel(titulo)
             lbl.setFont(QFont("DejaVu Sans", 14, QFont.Bold))
-            lbl.setStyleSheet("color:#888;")
+            lbl.setStyleSheet(qss("color:$FontFraca;"))
             col.addWidget(lbl)
 
         area = QScrollArea()
@@ -1311,7 +1368,7 @@ class FilesWindow(QWidget):
         super().__init__(parent)
         self.parent_app = parent
 
-        self.setStyleSheet("background:#111; color:#eee;")
+        self.setStyleSheet(qss("background:$PrincipalBaixo; color:$Font;"))
         layout = QVBoxLayout()
         self._ordem = 0
         self.raiz = os.path.realpath(PASTA_SAIDA)
@@ -1327,18 +1384,18 @@ class FilesWindow(QWidget):
         self.btn_armazens.setFont(QFont("DejaVu Sans", 12))
         self.btn_armazens.setFocusPolicy(NO_FOCUS)
         self.btn_armazens.setFixedHeight(48)
-        self.btn_armazens.setStyleSheet(
-            "QPushButton{background:#222;border:2px solid #333;"
-            "border-radius:10px;color:#fff;padding:0 14px;}"
-            "QPushButton:pressed{background:#333; border:2px solid #fff;}"
-        )
+        self.btn_armazens.setStyleSheet(qss(
+            "QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
+            "border-radius:10px;color:$Font;padding:0 14px;}"
+            "QPushButton:pressed{background:$Principal; border:2px solid $Font;}"
+        ))
         self.btn_armazens.clicked.connect(
             lambda: self.show_armazens(self.btn_armazens))
         topo.addWidget(self.btn_armazens)
 
         self.lbl_tamanho = QLabel("")
         self.lbl_tamanho.setFont(QFont("DejaVu Sans", 12))
-        self.lbl_tamanho.setStyleSheet("color:#888;")
+        self.lbl_tamanho.setStyleSheet(qss("color:$FontFraca;"))
         topo.addWidget(self.lbl_tamanho)
 
         self.btn_ordem = QPushButton("⇅ Nome")
@@ -1346,11 +1403,11 @@ class FilesWindow(QWidget):
         self.btn_ordem.setFocusPolicy(NO_FOCUS)
         self.btn_ordem.setFixedHeight(48)
         self.btn_ordem.setMinimumWidth(140)
-        self.btn_ordem.setStyleSheet(
-            "QPushButton{background:#222;border:2px solid #333;"
-            "border-radius:10px;color:#fff;padding:0 14px;}"
-            "QPushButton:pressed{background:#333; border:2px solid #fff;}"
-        )
+        self.btn_ordem.setStyleSheet(qss(
+            "QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
+            "border-radius:10px;color:$Font;padding:0 14px;}"
+            "QPushButton:pressed{background:$Principal; border:2px solid $Font;}"
+        ))
         self.btn_ordem.clicked.connect(self.alternar_ordem)
         topo.addWidget(self.btn_ordem)
 
@@ -1364,11 +1421,11 @@ class FilesWindow(QWidget):
         self.scroll_area.viewport().setAttribute(Qt.WA_AcceptTouchEvents, True)
         QScroller.grabGesture(self.scroll_area.viewport(),
                       QScroller.LeftMouseButtonGesture)
-        self.scroll_area.setStyleSheet(
-            "QScrollArea{border:none; background:#111;}"
-            "QScrollBar:vertical{background:#111; width:10px;}"
-            "QScrollBar::handle:vertical{background:#fff;}"
-        )
+        self.scroll_area.setStyleSheet(qss(
+            "QScrollArea{border:none; background:$PrincipalBaixo;}"
+            "QScrollBar:vertical{background:$PrincipalBaixo; width:10px;}"
+            "QScrollBar::handle:vertical{background:$Font;}"
+        ))
 
         # Widget interno que vai conter a lista (o QScrollArea precisa de um único widget filho)
         self.files_container = QWidget()
@@ -1376,7 +1433,7 @@ class FilesWindow(QWidget):
         self.files_layout.setSpacing(5)
         self.files_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.files_container.setLayout(self.files_layout)
-        self.files_container.setStyleSheet("background:#111; border:1px solid #333; border-radius:5px; padding:10px;")
+        self.files_container.setStyleSheet(qss("background:$PrincipalBaixo; border:1px solid $Principal; border-radius:5px; padding:10px;"))
 
         self.scroll_area.setWidget(self.files_container)
         layout.addWidget(self.scroll_area)
@@ -1386,11 +1443,11 @@ class FilesWindow(QWidget):
         btn_voltar.setMinimumHeight(64)
         btn_voltar.setFont(QFont("DejaVu Sans", 15))
         btn_voltar.setFocusPolicy(NO_FOCUS)
-        btn_voltar.setStyleSheet(
-            "QPushButton{background:#222;border:2px solid #fff;"
-            "border-radius:10px;color:#fff;padding:6px 18px;}"
-            "QPushButton:pressed{background:#333;}"
-        )
+        btn_voltar.setStyleSheet(qss(
+            "QPushButton{background:$PrincipalMedio;border:2px solid $Font;"
+            "border-radius:10px;color:$Font;padding:6px 18px;}"
+            "QPushButton:pressed{background:$Principal;}"
+        ))
         btn_voltar.clicked.connect(self.voltar)
         layout.addWidget(btn_voltar)
         self.setLayout(layout)
@@ -1517,7 +1574,7 @@ class FilesWindow(QWidget):
         if not pastas and not arquivos:
             lbl_vazio = QLabel("Nenhum arquivo encontrado.")
             lbl_vazio.setFont(QFont("DejaVu Sans", 15))
-            lbl_vazio.setStyleSheet("color:#888;")
+            lbl_vazio.setStyleSheet(qss("color:$FontFraca;"))
             self.files_layout.addWidget(lbl_vazio)
 
         for arquivo in arquivos:
@@ -1554,11 +1611,11 @@ class FilesWindow(QWidget):
             btn_options = QPushButton("≡")
             btn_options.setFont(QFont("DejaVu Sans", 12))
             btn_options.setFocusPolicy(NO_FOCUS)
-            btn_options.setStyleSheet(
-                "QPushButton{background:#222;border:2px solid #333;"
-                "border-radius:10px;color:#fff;}"
-                "QPushButton:pressed{background:#333; border:2px solid #fff;}"
-            )
+            btn_options.setStyleSheet(qss(
+                "QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
+                "border-radius:10px;color:$Font;}"
+                "QPushButton:pressed{background:$Principal; border:2px solid $Font;}"
+            ))
             btn_options.setFixedSize(55, 55)
             btn_options.clicked.connect(lambda _, f=arquivo, b=btn_options: self.show_options(f, b))
 
@@ -1607,11 +1664,11 @@ class FilesWindow(QWidget):
             btn_x.setFont(QFont("DejaVu Sans", 12))
             btn_x.setFocusPolicy(NO_FOCUS)
             btn_x.setFixedSize(55, 55)
-            btn_x.setStyleSheet(
-                "QPushButton{background:#222;border:2px solid #333;"
-                "border-radius:10px;color:#fff;}"
-                "QPushButton:pressed{background:#b33; border:2px solid #fff;}"
-            )
+            btn_x.setStyleSheet(qss(
+                "QPushButton{background:$PrincipalMedio;border:2px solid $Principal;"
+                "border-radius:10px;color:$Font;}"
+                "QPushButton:pressed{background:$Perigo; border:2px solid $Font;}"
+            ))
             btn_x.clicked.connect(
                 lambda _, d=destino: self.confirmar_apagar_pasta(d))
             lay.addWidget(btn_x)
@@ -1742,7 +1799,7 @@ class FilesWindow(QWidget):
             f"{self._fmt_bytes(usado)} / {self._fmt_bytes(uso.total)}"
         )
         self.lbl_tamanho.setStyleSheet(
-            f"color:{'#f66' if pct >= 90 else '#888'};"
+            f"color:{C['NegativoAlto'] if pct >= 90 else C['FontFraca']};"
         )
 
 
@@ -1759,10 +1816,10 @@ class ConfirmOverlay(QWidget):
         card = QFrame()
         card.setObjectName("card")
         card.setFixedWidth(min(520, max(320, parent.width() - 60)))
-        card.setStyleSheet(
-            "#card{background:#1b1b1b;border:2px solid #444;border-radius:16px;}"
-            "QLabel{color:#fff;}"
-        )
+        card.setStyleSheet(qss(
+            "#card{background:$Cartao;border:2px solid $PrincipalAlto;border-radius:16px;}"
+            "QLabel{color:$Font;}"
+        ))
         col = QVBoxLayout(card)
         col.setContentsMargins(20, 18, 20, 18)
         col.setSpacing(12)
@@ -1773,7 +1830,7 @@ class ConfirmOverlay(QWidget):
 
         lbl_m = QLabel(mensagem)
         lbl_m.setWordWrap(True)
-        lbl_m.setStyleSheet("color:#bbb;font-size:15px;")
+        lbl_m.setStyleSheet(qss("color:$FontMedia;font-size:15px;"))
         col.addWidget(lbl_m)
 
         lin = QHBoxLayout()
@@ -1781,11 +1838,11 @@ class ConfirmOverlay(QWidget):
         b_x = botao_touch("Cancelar", 0, 58)
         b_x.clicked.connect(self._fechar)
         b_ok = botao_touch(rotulo_ok, 0, 58)
-        b_ok.setStyleSheet(
-            "QPushButton{background:#b23b3b;border:2px solid #333;"
-            "border-radius:10px;color:#fff;padding:0 12px;}"
-            "QPushButton:pressed{background:#d14b4b;border:2px solid #fff;}"
-        )
+        b_ok.setStyleSheet(qss(
+            "QPushButton{background:$Perigo;border:2px solid $Principal;"
+            "border-radius:10px;color:$Font;padding:0 12px;}"
+            "QPushButton:pressed{background:$PerigoAlto;border:2px solid $Font;}"
+        ))
         b_ok.clicked.connect(self._ok)
         lin.addWidget(b_x, 1)
         lin.addWidget(b_ok, 1)
@@ -1838,13 +1895,13 @@ class RenameOverlay(QWidget):
         card = QFrame()
         card.setObjectName("card")
         card.setFixedWidth(min(600, parent_w := self.width() - 40))
-        card.setStyleSheet(
-            "#card{background:#1b1b1b;border:2px solid #444;border-radius:16px;}"
-            "QLabel{color:#fff;}"
-            "QLineEdit{background:#111;border:2px solid #555;border-radius:10px;"
-            "color:#fff;padding:8px 12px;font-size:22px;}"
-            "QLineEdit:focus{border:2px solid #fff;}"
-        )
+        card.setStyleSheet(qss(
+            "#card{background:$Cartao;border:2px solid $PrincipalAlto;border-radius:16px;}"
+            "QLabel{color:$Font;}"
+            "QLineEdit{background:$PrincipalBaixo;border:2px solid $PrincipalAlto;border-radius:10px;"
+            "color:$Font;padding:8px 12px;font-size:22px;}"
+            "QLineEdit:focus{border:2px solid $Font;}"
+        ))
         col = QVBoxLayout(card)
         col.setContentsMargins(20, 18, 20, 18)
         col.setSpacing(12)
@@ -1864,7 +1921,7 @@ class RenameOverlay(QWidget):
 
         lbl_ext = QLabel(self.ext)
         lbl_ext.setFont(QFont("DejaVu Sans", 14))
-        lbl_ext.setStyleSheet("color:#888;")
+        lbl_ext.setStyleSheet(qss("color:$FontFraca;"))
         linha.addWidget(lbl_ext)
 
         self.btn_kb = botao_touch("⌨", 55, 55, destaque=False)
@@ -1875,7 +1932,7 @@ class RenameOverlay(QWidget):
         col.addLayout(linha)
 
         self.aviso = QLabel("")
-        self.aviso.setStyleSheet("color:#f66;font-size:14px;")
+        self.aviso.setStyleSheet(qss("color:$NegativoAlto;font-size:14px;"))
         col.addWidget(self.aviso)
 
         # ---- teclado virtual (escondido)
@@ -1971,12 +2028,12 @@ class MoveOverlay(QWidget):
         card = QFrame()
         card.setObjectName("card")
         card.setFixedWidth(min(600, parent_w := self.width() - 40))
-        card.setStyleSheet(
-            "#card{background:#1b1b1b;border:2px solid #444;border-radius:16px;}"
-            "QLabel{color:#fff;}"
-            "QLineEdit{background:#111;border:2px solid #555;border-radius:10px;"
-            "color:#fff;padding:8px 12px;font-size:22px;}"
-        )
+        card.setStyleSheet(qss(
+            "#card{background:$Cartao;border:2px solid $PrincipalAlto;border-radius:16px;}"
+            "QLabel{color:$Font;}"
+            "QLineEdit{background:$PrincipalBaixo;border:2px solid $PrincipalAlto;border-radius:10px;"
+            "color:$Font;padding:8px 12px;font-size:22px;}"
+        ))
         
         col = QVBoxLayout(card)
         col.setContentsMargins(20, 18, 20, 18)
@@ -1987,7 +2044,7 @@ class MoveOverlay(QWidget):
         col.addWidget(self.titulo)
 
         self.lbl_arq = QLabel(self.nome)
-        self.lbl_arq.setStyleSheet("color:#888;font-size:14px;")
+        self.lbl_arq.setStyleSheet(qss("color:$FontFraca;font-size:14px;"))
         col.addWidget(self.lbl_arq)
 
         self.barra_armazem = botao_touch("", 0, 54)
@@ -1999,7 +2056,7 @@ class MoveOverlay(QWidget):
         col.addWidget(self.barra_pasta)
 
         self.aviso = QLabel("")
-        self.aviso.setStyleSheet("color:#f66;font-size:14px;")
+        self.aviso.setStyleSheet(qss("color:$NegativoAlto;font-size:14px;"))
         col.addWidget(self.aviso)
 
         # ---- painel "criar pasta" (escondido)
@@ -2183,24 +2240,24 @@ class ViewerWindow(QWidget):
         self.pausado = False
         self._dur = None
 
-        self.setStyleSheet("background:#000; color:#eee;")
+        self.setStyleSheet(qss("background:$Preto; color:$Font;"))
 
         self.lbl_nome = QLabel("")
         self.lbl_nome.setFont(QFont("DejaVu Sans", 12))
-        self.lbl_nome.setStyleSheet("color:#888; padding:4px;")
+        self.lbl_nome.setStyleSheet(qss("color:$FontFraca; padding:4px;"))
 
         # host do vídeo: QWidget puro, janela X11 nativa pro mpv
         self.video_host = QWidget()
         self.video_host.setAttribute(Qt.WA_NativeWindow, True)
         self.video_host.setAttribute(Qt.WA_DontCreateNativeAncestors, True)
-        self.video_host.setStyleSheet("background:#000;")
+        self.video_host.setStyleSheet(qss("background:$Preto;"))
         self.video_host.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.video_host.setMinimumHeight(200)
 
         # área de foto (continua QLabel, que sabe escalar pixmap)
         self.area = QLabel()
         self.area.setAlignment(ALIGN_CENTER)
-        self.area.setStyleSheet("background:#000;")
+        self.area.setStyleSheet(qss("background:$Preto;"))
         self.area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # troca entre os dois conforme o tipo de arquivo
@@ -2213,13 +2270,13 @@ class ViewerWindow(QWidget):
         self.lbl_tempo = QLabel("00:00 / 00:00")
         self.lbl_tempo.setFont(QFont("DejaVu Sans", 13))
         self.lbl_tempo.setAlignment(ALIGN_CENTER)
-        self.lbl_tempo.setStyleSheet("color:#5bf; padding:2px;")
+        self.lbl_tempo.setStyleSheet(qss("color:$Destaque; padding:2px;"))
 
         # --- controles ---
-        estilo_ctrl = (
-            "QPushButton{background:#112;border:2px solid #5bf;"
-            "border-radius:10px;color:#5bf;padding:6px 10px;}"
-            "QPushButton:pressed{background:#135;}"
+        estilo_ctrl = qss(
+            "QPushButton{background:$DestaqueBaixo;border:2px solid $Destaque;"
+            "border-radius:10px;color:$Destaque;padding:6px 10px;}"
+            "QPushButton:pressed{background:$DestaqueMedio;}"
         )
 
         self.btn_play = QPushButton("❚❚")
@@ -2250,11 +2307,11 @@ class ViewerWindow(QWidget):
         btn_voltar.setMinimumHeight(56)
         btn_voltar.setFont(QFont("DejaVu Sans", 15))
         btn_voltar.setFocusPolicy(NO_FOCUS)
-        btn_voltar.setStyleSheet(
-            "QPushButton{background:#222;border:2px solid #fff;"
-            "border-radius:10px;color:#fff;padding:6px 18px;}"
-            "QPushButton:pressed{background:#333;}"
-        )
+        btn_voltar.setStyleSheet(qss(
+            "QPushButton{background:$PrincipalMedio;border:2px solid $Font;"
+            "border-radius:10px;color:$Font;padding:6px 18px;}"
+            "QPushButton:pressed{background:$Principal;}"
+        ))
         btn_voltar.clicked.connect(self.voltar)
 
         # topo: nome + tempo na mesma linha

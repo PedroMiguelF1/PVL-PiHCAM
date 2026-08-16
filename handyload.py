@@ -61,33 +61,38 @@ os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
 
 from qt import QTimer, QEventLoop, QFont, QApplication, QWidget, QVBoxLayout, QLabel, QProgressBar, FONT_BOLD, ALIGN_CENTER, EXEC
 
+# O pacote temas so usa json/pkgutil/importlib — import barato, nao atrasa
+# o splash. O handycam.py importa o mesmo pacote depois e pega do
+# sys.modules, entao o config e lido uma vez so.
+from temas import qss
+
 class Splash(QWidget):
     def __init__(self):
         super().__init__()
-        self.setStyleSheet("background:#111;")
+        self.setStyleSheet(qss("background:$PrincipalBaixo;"))
 
         layout = QVBoxLayout()
         layout.setContentsMargins(60, 40, 60, 50)
 
         self.lbl = QLabel("PVL-PiHCAM")
         self.lbl.setFont(QFont("DejaVu Sans", 20, FONT_BOLD))
-        self.lbl.setStyleSheet("color:#5df;")
+        self.lbl.setStyleSheet(qss("color:$Destaque;"))
         self.lbl.setAlignment(ALIGN_CENTER)
 
         self.lbl_etapa = QLabel("")
         self.lbl_etapa.setFont(QFont("DejaVu Sans", 11))
-        self.lbl_etapa.setStyleSheet("color:#888;")
+        self.lbl_etapa.setStyleSheet(qss("color:$FontFraca;"))
         self.lbl_etapa.setAlignment(ALIGN_CENTER)
 
         self.barra = QProgressBar()
         self.barra.setRange(0, 100)
         self.barra.setTextVisible(False)
         self.barra.setFixedHeight(16)
-        self.barra.setStyleSheet("""
-            QProgressBar { background:#222; border:1px solid #333;
+        self.barra.setStyleSheet(qss("""
+            QProgressBar { background:$PrincipalMedio; border:1px solid $Principal;
                            border-radius:8px; }
-            QProgressBar::chunk { background:#5bf; border-radius:7px; }
-        """)
+            QProgressBar::chunk { background:$Destaque; border-radius:7px; }
+        """))
 
         layout.addStretch(1)
         layout.addWidget(self.lbl)
@@ -106,12 +111,12 @@ class Splash(QWidget):
 
 def criar_splash():
     splash = QWidget()
-    splash.setStyleSheet("background:#111;")
+    splash.setStyleSheet(qss("background:$PrincipalBaixo;"))
 
     layout = QVBoxLayout()
     lbl = QLabel("HandyPiCam NoIR")
     lbl.setFont(QFont("DejaVu Sans", 20, FONT_BOLD))
-    lbl.setStyleSheet("color:#5df;")
+    lbl.setStyleSheet(qss("color:$Destaque;"))
     lbl.setAlignment(ALIGN_CENTER)
     layout.addWidget(lbl)
     splash.setLayout(layout)
