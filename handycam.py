@@ -629,6 +629,11 @@ class DialogoUpdate(QDialog):
 
         self.btn = QPushButton("OK")
         self.btn.setMinimumHeight(56)
+        self.btn.setStyleSheet("QPushButton{background:#222;border:2px solid #333;"
+        "border-radius:10px;color:#fff;padding:6px 18px;}"
+        "QPushButton:pressed{background:#333;}"
+        "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}"
+        )
         self.btn.clicked.connect(self.accept)
         self.btn.hide()   # só aparece quando termina
 
@@ -1397,8 +1402,8 @@ class ViewerWindow(QWidget):
         QApplication.processEvents()
 
         if self.video_host.height() < 100:
-            if tentativa < 20:
-                QTimer.singleShot(150, lambda: self._tocar_video(caminho, tentativa + 1))
+            for tentativa in range(20):
+                QTimer.singleShot(150, lambda: self._tocar_video(caminho))
             else:
                 print("video_host não dimensionou:", self.video_host.size())
             return

@@ -1,6 +1,8 @@
 import os
 import subprocess
-from PySide6.QtCore import QThread, pyqtSignal
+
+
+from qt import QThread, Signal
 
 REPO_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -11,8 +13,8 @@ def git(*args, timeout=180):
     )
 
 class AtualizadorWorker(QThread):
-    progresso = pyqtSignal(str)
-    terminou = pyqtSignal(bool, str)   # (precisa_reiniciar, mensagem)
+    progresso = Signal(str)
+    terminou = Signal(bool, str)   # (precisa_reiniciar, mensagem)
 
     def run(self):
         try:
