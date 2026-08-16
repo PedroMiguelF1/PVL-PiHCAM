@@ -32,9 +32,14 @@ Changelog (merge com handycam_pc.py):
 import sys
 import time
 import os
+import re
 import json
 import subprocess
 import socket
+import shutil
+import getpass
+import hashlib
+
 from gpiozero import DigitalOutputDevice
 
 # Força XCB (X11 via XWayland) em vez de Wayland — ver explicação completa
@@ -140,8 +145,22 @@ FPS_NOITE = FPS_DIA          # menos fps = mais tempo de exposição = mais luz
 GANHO_NOITE = 8.0
 BITRATE = 2_000_000
 TUNING = "ov5647_noir.json"
-PASTA_SAIDA = "./media"       # ex: "/media/usb" para gravar em pendrive
+PASTA_SAIDA = "./Media"       # ex: "/media/usb" para gravar em pendrive
+PASTA_VIDEOS = os.path.join(PASTA_SAIDA, "Videos")
+PASTA_FOTOS = os.path.join(PASTA_SAIDA, "Fotos")
 PASTA_THUMBS = os.path.join(PASTA_SAIDA, ".thumbs")  # cache das thumbnails
+SUBPASTA_USB = os.path.join("Handycam", "Media")
+
+BTN_ON = ("QPushButton{background:#223;border:2px solid #5df;"
+              "border-radius:10px;color:#fff;padding:6px 18px;}"
+              "QPushButton:pressed{background:#333;}"
+              "QPushButton:checked{background:#346;border:2px solid #7ef;color:#fff;}")
+    
+BTN_OFF = ("QPushButton{background:#222;border:2px solid #333;"
+        "border-radius:10px;color:#fff;padding:6px 18px;}"
+        "QPushButton:pressed{background:#333;}"
+        "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}")
+
 os.makedirs(PASTA_THUMBS, exist_ok=True)
 
 # No Pi 4, gerar várias thumbnails de vídeo ao mesmo tempo (cada uma
@@ -155,13 +174,13 @@ QThreadPool.globalInstance().setMaxThreadCount(1)
 # ----------------------------------------------------------------------
 # Efeito de visão noturna (roda em cada frame, antes do preview/encoder)
 # ----------------------------------------------------------------------
-def tint_green(request):
-    with MappedArray(request, "main") as m:
-        arr = m.array                       # XRGB8888 -> 4 canais
-        gray = cv2.cvtColor(arr, cv2.COLOR_BGRA2GRAY)
-        arr[:, :, 0] = (gray * 0.60).astype(np.uint8)    # azul
-        arr[:, :, 1] = gray                              # verde
-        arr[:, :, 2] = (gray * 0.50).astype(np.uint8)    # vermelho
+# def tint_green(request):
+#     with MappedArray(request, "main") as m:
+#         arr = m.array                       # XRGB8888 -> 4 canais
+#         gray = cv2.cvtColor(arr, cv2.COLOR_BGRA2GRAY)
+#         arr[:, :, 0] = (gray * 0.60).astype(np.uint8)    # azul
+#         arr[:, :, 1] = gray                              # verde
+#         arr[:, :, 2] = (gray * 0.50).astype(np.uint8)    # vermelho
 
 
 # ----------------------------------------------------------------------
@@ -210,26 +229,26 @@ class Handycam(QWidget):
         self.lbl_info.setFont(QFont("DejaVu Sans", 13))
         self.lbl_info.setAlignment(ALIGN_RIGHT)
  
+        self.btn_files = QPushButton("≡")
+        self.btn_files.setStyleSheet(
+            "QPushButton{background:#222;border:2px solid #333;"
+            "border-radius:10px;color:#fff;}"
+            "QPushButton:pressed{background:#333; border:2px solid #fff;}"
+        )
+        self.btn_files.setFixedSize(50, 50)
+        self.btn_files.setFont(QFont("DejaVu Sans", 13, FONT_BOLD))
+        self.btn_files.setFocusPolicy(NO_FOCUS)
+
         
         self.btn_conf = QPushButton("⚙")
         self.btn_conf.setStyleSheet(
             "QPushButton{background:#222;border:2px solid #333;"
-            "border-radius:10px;color:#fff;padding:6px 18px;}"
+            "border-radius:10px;color:#fff;}"
             "QPushButton:pressed{background:#333; border:2px solid #fff;}"
-            "width:50px;height:50px;"
         )
+        self.btn_conf.setFixedSize(50, 50)
         self.btn_conf.setFont(QFont("DejaVu Sans", 15, FONT_BOLD))
         self.btn_conf.setFocusPolicy(NO_FOCUS)
- 
-        self.btn_files = QPushButton("≡")
-        self.btn_files.setStyleSheet(
-            "QPushButton{background:#222;border:2px solid #333;"
-            "border-radius:10px;color:#fff;padding:6px 18px;}"
-            "QPushButton:pressed{background:#333; border:2px solid #fff;}"
-            "width:50px;height:50px;"
-        )
-        self.btn_files.setFont(QFont("DejaVu Sans", 13, FONT_BOLD))
-        self.btn_files.setFocusPolicy(NO_FOCUS)
 
         status = QHBoxLayout()
         status.addWidget(self.lbl_clock)
@@ -395,7 +414,7 @@ class Handycam(QWidget):
             self.files_window.marcar_sujo()
         else:
             fps_atual = FPS_NOITE if self.noite else FPS_DIA
-            nome = time.strftime(f"{PASTA_SAIDA}/handycam_video_%Y%m%d_%H%M%S.mp4")
+            nome = time.strftime(f"{PASTA_VIDEOS}/handycam_video_%Y%m%d_%H%M%S.mp4")
             self.encoder = H264Encoder(bitrate=BITRATE, framerate=fps_atual)
             if AUDIO_DEVICE:
                 saida = FfmpegOutput(nome, audio=True, audio_device=AUDIO_DEVICE,
@@ -417,7 +436,7 @@ class Handycam(QWidget):
             print("Gravando:", nome)
 
     def take_photo(self):
-        self._nome_foto = time.strftime(f"{PASTA_SAIDA}/handycam_foto_%Y%m%d_%H%M%S.jpg")
+        self._nome_foto = time.strftime(f"{PASTA_FOTOS}/handycam_foto_%Y%m%d_%H%M%S.jpg")
         self.btn_photo.setEnabled(False)
  
         # Feedback visual imediato: icone de camera azul no canto direito
@@ -625,9 +644,10 @@ class DialogoUpdate(QDialog):
         self.lbl = QLabel("Conectando...")
         self.lbl.setAlignment(Qt.AlignCenter)
         self.lbl.setWordWrap(True)
-        self.lbl.setFont(QFont("DejaVu Sans", 13))
+        self.lbl.setFont(QFont("DejaVu Sans", 12))
 
         self.btn = QPushButton("OK")
+        self.btn.setFont(QFont("DejaVu Sans", 12))
         self.btn.setMinimumHeight(56)
         self.btn.setStyleSheet("QPushButton{background:#222;border:2px solid #333;"
         "border-radius:10px;color:#fff;padding:6px 18px;}"
@@ -652,16 +672,6 @@ class DialogoUpdate(QDialog):
 
 
 class Configura(QWidget):
-
-    BTN_ON = ("QPushButton{background:#223;border:2px solid #5df;"
-              "border-radius:10px;color:#fff;padding:6px 18px;}"
-              "QPushButton:pressed{background:#333;}"
-              "QPushButton:checked{background:#346;border:2px solid #7ef;color:#fff;}")
-    
-    BTN_OFF = ("QPushButton{background:#222;border:2px solid #333;"
-        "border-radius:10px;color:#fff;padding:6px 18px;}"
-        "QPushButton:pressed{background:#333;}"
-        "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}")
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -709,16 +719,6 @@ class Configura(QWidget):
         self.config_container.setStyleSheet(
             "background:#111; border:1px solid #333; border-radius:5px; padding:10px;"
         )
-        
-        BTN_ON = ("QPushButton{background:#223;border:2px solid #5df;"
-          "border-radius:10px;color:#fff;padding:6px 18px;}"
-          "QPushButton:pressed{background:#333;}"
-          "QPushButton:checked{background:#346;border:2px solid #7ef;color:#fff;}")
-
-        BTN_OFF = ("QPushButton{background:#222;border:2px solid #333;"
-           "border-radius:10px;color:#fff;padding:6px 18px;}"
-           "QPushButton:pressed{background:#333;}"
-           "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}")
 
         lbl_sub1 = QLabel("Resolução e FPS")
         lbl_sub1.setFont(QFont("DejaVu Sans", 12))
@@ -900,7 +900,7 @@ class Configura(QWidget):
                 background: #2a2a2a;
             }
             QPushButton:checked {
-                background: #0af;
+                background: #5bf;
                 border: 2px solid #5df;
                 color: #fff;
             }
@@ -1061,6 +1061,7 @@ class ClickableItem(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self._pos_press = None
         self.setStyleSheet(self.ESTILO_NORMAL)
 
@@ -1083,16 +1084,249 @@ class ClickableItem(QWidget):
         super().leaveEvent(event)
 
 
+# File Manager
+
+def botao_touch(texto, larg=0, alt=48, destaque=False):
+    b = QPushButton(texto)
+    b.setFocusPolicy(NO_FOCUS)
+    b.setFont(QFont("DejaVu Sans", 13))
+    if larg:
+        b.setFixedSize(larg, alt)
+    else:
+        b.setFixedHeight(alt)
+    b.setStyleSheet(BTN_ON if destaque else BTN_OFF)
+    return b
+
+class EscolhaOverlay(QWidget):
+    escolhido = Signal(object)          # o valor associado ao item
+
+    def __init__(self, titulo, itens, parent):
+        """itens: [(rótulo, valor), ...]"""
+        super().__init__(parent)
+        self.setGeometry(parent.rect())
+        self.setStyleSheet("background:transparent;")
+
+        card = QFrame()
+        card.setObjectName("card")
+        card.setFixedWidth(min(560, max(320, parent.width() - 60)))
+        card.setStyleSheet(
+            "#card{background:#1b1b1b;border:2px solid #444;border-radius:16px;}"
+            "QLabel{color:#fff;}"
+        )
+        col = QVBoxLayout(card)
+        col.setContentsMargins(18, 16, 18, 16)
+        col.setSpacing(8)
+
+        if titulo:
+            lbl = QLabel(titulo)
+            lbl.setFont(QFont("DejaVu Sans", 14, QFont.Bold))
+            lbl.setStyleSheet("color:#888;")
+            col.addWidget(lbl)
+
+        # scroll: a lista de pastas pode ser longa
+        area = QScrollArea()
+        area.setWidgetResizable(True)
+        area.setFrameShape(QFrame.NoFrame)
+        area.setStyleSheet("background:transparent;")
+        area.viewport().setAttribute(Qt.WA_AcceptTouchEvents, True)
+        QScroller.grabGesture(area.viewport(), QScroller.LeftMouseButtonGesture)
+
+        dentro = QWidget()
+        dentro.setStyleSheet("background:transparent;")
+        v = QVBoxLayout(dentro)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(6)
+        for rotulo, valor in itens:
+            b = botao_touch(rotulo, 0, 56)
+            b.setStyleSheet(b.styleSheet() + "QPushButton{text-align:left;}")
+            b.clicked.connect(lambda _, x=valor: self._pick(x))
+            v.addWidget(b)
+        v.addStretch()
+        area.setWidget(dentro)
+
+        alt = min(len(itens) * 62 + 10, max(160, parent.height() - 220))
+        area.setFixedHeight(alt)
+        col.addWidget(area)
+
+        b_x = botao_touch("Cancelar", 0, 56)
+        b_x.clicked.connect(self._fechar)
+        col.addWidget(b_x)
+
+        raiz = QVBoxLayout(self)
+        raiz.addStretch()
+        meio = QHBoxLayout()
+        meio.addStretch()
+        meio.addWidget(card)
+        meio.addStretch()
+        raiz.addLayout(meio)
+        raiz.addStretch()
+
+    def paintEvent(self, _):
+        QPainter(self).fillRect(self.rect(), QColor(0, 0, 0, 205))
+
+    def _fechar(self):
+        self.hide()
+        self.deleteLater()
+
+    def _pick(self, valor):
+        self.escolhido.emit(valor)
+        self._fechar()
+
+
+def escolher(titulo, itens, parent, callback):
+    ov = EscolhaOverlay(titulo, itens, parent)
+    ov.escolhido.connect(callback)
+    ov.setGeometry(parent.rect())
+    ov.show()
+    ov.raise_()
+    return ov
+
+class TecladoVirtual(QWidget):
+    LINHAS = ["1234567890", "qwertyuiop", "asdfghjkl-", "zxcvbnm_."]
+
+    def __init__(self, alvo, parent=None, alt=38):
+        super().__init__(parent)
+        self.alvo = alvo
+        self.caps = False
+        self.teclas = []
+
+        g = QGridLayout(self)
+        g.setSpacing(3)
+        g.setContentsMargins(0, 0, 0, 0)
+        for c in range(10):
+            g.setColumnStretch(c, 1)
+
+        for r, linha in enumerate(self.LINHAS):
+            for c, ch in enumerate(linha):
+                b = botao_touch(ch, 0, alt)
+                b.setMinimumWidth(1)          # deixa o grid encolher
+                b.clicked.connect(lambda _, x=ch: self._digitar(x))
+                self.teclas.append((b, ch))
+                g.addWidget(b, r, c)
+
+        b_shift = botao_touch("⇧", 0, alt)
+        b_shift.setCheckable(True)
+        b_shift.toggled.connect(self._caps)
+        g.addWidget(b_shift, 4, 0, 1, 2)
+
+        b_space = botao_touch("espaço", 0, alt)
+        b_space.setMinimumWidth(1)
+        b_space.clicked.connect(lambda: self._digitar(" "))
+        g.addWidget(b_space, 4, 2, 1, 6)
+
+        b_back = botao_touch("⌫", 0, alt)
+        b_back.clicked.connect(self.alvo.backspace)
+        g.addWidget(b_back, 4, 8, 1, 2)
+        
+    def _caps(self, on):
+        self.caps = on
+        for b, ch in self.teclas:
+            b.setText(ch.upper() if on else ch)
+
+    def _digitar(self, ch):
+        self.alvo.insert(ch.upper() if self.caps and ch.isalpha() else ch)
+
+
+def garantir_padrao(raiz):
+    """Cria Videos/ e Fotos/ na raiz do armazém. Levanta OSError se read-only."""
+    os.makedirs(os.path.join(raiz, "Videos"), exist_ok=True)
+    os.makedirs(os.path.join(raiz, "Fotos"),  exist_ok=True)
+    return raiz
+
+def thumb_de(caminho):
+    caminho = os.path.realpath(caminho)
+    raiz = os.path.realpath(PASTA_SAIDA)
+    if caminho == raiz or caminho.startswith(raiz + os.sep):
+        chave = os.path.relpath(caminho, raiz)      # igual a hoje: cache atual continua valendo
+    else:
+        h = hashlib.md5(os.path.dirname(caminho).encode()).hexdigest()[:10]
+        chave = f"ext_{h}_{os.path.basename(caminho)}"
+    return os.path.join(PASTA_THUMBS, chave.replace(os.sep, "__") + ".thumb.jpg")
+
+def armazens():
+    """[(rótulo, caminho_raiz, livre_em_bytes), ...] — interno primeiro."""
+    lista = [("Interno", PASTA_SAIDA, PASTA_SAIDA)]      # (rótulo, ponto, raiz)
+    try:
+        r = subprocess.run(
+            ["lsblk", "-J", "-o", "NAME,LABEL,MOUNTPOINT,TYPE"],
+            capture_output=True, text=True, timeout=3)
+        dados = json.loads(r.stdout)
+    except Exception:
+        dados = {}
+
+    def anda(nos):
+        for n in nos:
+            mp = n.get("mountpoint")
+            if mp and mp not in ("/", "/boot", "/boot/firmware", "[SWAP]"):
+                lista.append((n.get("label") or os.path.basename(mp),
+                              mp, os.path.join(mp, SUBPASTA_USB)))
+            anda(n.get("children") or [])
+    anda(dados.get("blockdevices", []))
+
+    saida = []
+    for rotulo, ponto, raiz in lista:
+        try:
+            saida.append((rotulo, raiz, shutil.disk_usage(ponto).free))
+        except OSError:
+            pass          # desmontado no meio do caminho
+    return saida
+
+
 class FilesWindow(QWidget):
+    ORDENS = [
+        ("Nome",    lambda e: e.name.lower(),     True),
+        ("Data",    lambda e: e.stat().st_mtime,  True),
+        ("Tamanho", lambda e: e.stat().st_size,   True),
+    ]
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent_app = parent
 
         self.setStyleSheet("background:#111; color:#eee;")
         layout = QVBoxLayout()
-        lbl_titulo = QLabel("Arquivos Gravados")
-        lbl_titulo.setFont(QFont("DejaVu Sans", 15))
-        layout.addWidget(lbl_titulo)
+        self._ordem = 0
+        self.raiz = os.path.realpath(PASTA_SAIDA)
+        self.pasta_atual = self.raiz
+
+        topo = QHBoxLayout()
+        self.lbl_titulo = QLabel("Arquivos Gravados")
+        self.lbl_titulo.setFont(QFont("DejaVu Sans", 15))
+        topo.addWidget(self.lbl_titulo)
+        topo.addStretch()
+
+        self.btn_armazens = QPushButton("⛁  Armazéns")
+        self.btn_armazens.setFont(QFont("DejaVu Sans", 12))
+        self.btn_armazens.setFocusPolicy(NO_FOCUS)
+        self.btn_armazens.setFixedHeight(48)
+        self.btn_armazens.setStyleSheet(
+            "QPushButton{background:#222;border:2px solid #333;"
+            "border-radius:10px;color:#fff;padding:0 14px;}"
+            "QPushButton:pressed{background:#333; border:2px solid #fff;}"
+        )
+        self.btn_armazens.clicked.connect(
+            lambda: self.show_armazens(self.btn_armazens))
+        topo.addWidget(self.btn_armazens)
+
+        self.lbl_tamanho = QLabel("")
+        self.lbl_tamanho.setFont(QFont("DejaVu Sans", 12))
+        self.lbl_tamanho.setStyleSheet("color:#888;")
+        topo.addWidget(self.lbl_tamanho)
+
+        self.btn_ordem = QPushButton("⇅ Nome")
+        self.btn_ordem.setFont(QFont("DejaVu Sans", 12))
+        self.btn_ordem.setFocusPolicy(NO_FOCUS)
+        self.btn_ordem.setFixedHeight(48)
+        self.btn_ordem.setMinimumWidth(140)
+        self.btn_ordem.setStyleSheet(
+            "QPushButton{background:#222;border:2px solid #333;"
+            "border-radius:10px;color:#fff;padding:0 14px;}"
+            "QPushButton:pressed{background:#333; border:2px solid #fff;}"
+        )
+        self.btn_ordem.clicked.connect(self.alternar_ordem)
+        topo.addWidget(self.btn_ordem)
+
+        layout.addLayout(topo)
         layout.setSpacing(14)
         layout.setContentsMargins(9, 9, 9, 9)
 
@@ -1133,8 +1367,46 @@ class FilesWindow(QWidget):
         layout.addWidget(btn_voltar)
         self.setLayout(layout)
 
+    def show_armazens(self, botao=None):
+        itens = [(f"{'●  ' if os.path.realpath(c) == self.raiz else '     '}"
+                  f"{r}   ({self._fmt_bytes(l)} livres)", (r, c))
+                 for r, c, l in armazens()]
+        itens.append(("⟳   Procurar novamente", None))
+        escolher("Armazém", itens, self, self._set_armazem)
+
+    def _set_armazem(self, par):
+        if par is None:
+            return QTimer.singleShot(0, self.show_armazens)
+        self.trocar_armazem(par[1], par[0])
+
+    def trocar_armazem(self, caminho, rotulo=""):
+        try:
+            os.makedirs(os.path.join(caminho, "Videos"), exist_ok=True)
+            os.makedirs(os.path.join(caminho, "Fotos"),  exist_ok=True)
+        except OSError as e:
+            self.lbl_titulo.setText(f"Sem acesso: {e.strerror}")
+            return
+
+        self.raiz = os.path.realpath(caminho)
+        self.pasta_atual = self.raiz
+        interno = self.raiz == os.path.realpath(PASTA_SAIDA)
+        self.btn_armazens.setText("⛁  Armazéns" if interno else f"⛁  {rotulo}")
+        self.lbl_titulo.setText("Arquivos Gravados" if interno else rotulo)
+        self.load_files()
+        self.scroll_area.verticalScrollBar().setValue(0)
+    
+    def alternar_ordem(self):
+        self._ordem = (self._ordem + 1) % len(self.ORDENS)
+        self.btn_ordem.setText("⇅ " + self.ORDENS[self._ordem][0])
+        self.load_files()
+        self.scroll_area.verticalScrollBar().setValue(0)
+
     def showEvent(self, event):
         super().showEvent(event)
+        if not os.path.isdir(self.raiz):
+            self.trocar_armazem(PASTA_SAIDA, "Interno")
+            self._sujo = False
+            return
         if getattr(self, "_sujo", True):
             self.load_files()
             self._sujo = False
@@ -1153,7 +1425,7 @@ class FilesWindow(QWidget):
 
     def abrir_arquivo(self, nome_arquivo):
         if self.parent_app:
-            self.parent_app.abrir_viewer(os.path.join(PASTA_SAIDA, nome_arquivo))
+            self.parent_app.abrir_viewer(os.path.join(self.pasta_atual, nome_arquivo))
 
     def load_files(self):
         # Limpa a lista atual antes de recarregar
@@ -1163,19 +1435,36 @@ class FilesWindow(QWidget):
             if widget:
                 widget.deleteLater()
 
-        arquivos = sorted(
-            [f for f in os.listdir(PASTA_SAIDA) if f.endswith(('.mp4', '.jpg'))],
-            reverse=True
-        )
+        _, chave, inverso = self.ORDENS[self._ordem]
+        with os.scandir(self.pasta_atual) as it:
+            entradas = [e for e in it if not e.name.startswith(".")]
 
-        if not arquivos:
+        pastas = sorted((e for e in entradas if e.is_dir()),
+                        key=lambda e: e.name.lower())
+        entradas = [e for e in entradas
+                    if e.is_file() and e.name.endswith(('.mp4', '.jpg'))]
+        entradas.sort(key=chave, reverse=inverso)
+        arquivos = [e.name for e in entradas]
+
+        self.thumb_labels = {}
+
+        # sempre no topo, só quando não está na raiz
+        if os.path.realpath(self.pasta_atual) != self.raiz:
+            self.files_layout.addWidget(
+                self._item_navegacao("⬅  voltar uma pasta",
+                                     os.path.dirname(self.pasta_atual)))
+
+        na_raiz = os.path.realpath(self.pasta_atual) == os.path.realpath(self.raiz)
+        for e in pastas:
+            protegida = na_raiz and e.name in ("Videos", "Fotos")
+            self.files_layout.addWidget(
+                self._item_navegacao(e.name, e.path, apagavel=not protegida))
+
+        if not pastas and not arquivos:
             lbl_vazio = QLabel("Nenhum arquivo encontrado.")
             lbl_vazio.setFont(QFont("DejaVu Sans", 15))
             lbl_vazio.setStyleSheet("color:#888;")
             self.files_layout.addWidget(lbl_vazio)
-            return
-
-        self.thumb_labels = {}  # guarda referência dos QLabel de thumb pendentes
 
         for arquivo in arquivos:
             # Widget "linha" que vai servir de container pro layout horizontal
@@ -1190,8 +1479,8 @@ class FilesWindow(QWidget):
             lbl_thumb.setFixedSize(125, 75)
             lbl_thumb.setStyleSheet("background: transparent; border:none; border-radius:4px;")
 
-            caminho_original = os.path.join(PASTA_SAIDA, arquivo)
-            caminho_thumb = os.path.join(PASTA_THUMBS, arquivo + ".thumb.jpg")
+            caminho_original = os.path.join(self.pasta_atual, arquivo)   # dentro do loop
+            caminho_thumb = thumb_de(caminho_original)
 
             if os.path.exists(caminho_thumb):
                 # já tem cache em disco, carrega direto (rápido, sem ffmpeg)
@@ -1208,25 +1497,26 @@ class FilesWindow(QWidget):
             lbl_arquivo.setFont(QFont("DejaVu Sans", 12))
             lbl_arquivo.setStyleSheet("background:transparent; border:none;")
 
-            btn_delete = QPushButton("X")
-            btn_delete.setFont(QFont("DejaVu Sans", 12))
-            btn_delete.setFocusPolicy(NO_FOCUS)
-            btn_delete.setStyleSheet(
-                "QPushButton{background:#311;border:2px solid #f33;"
-                "border-radius:10px;color:#f33;}"
-                "QPushButton:pressed{background:#511;}"
+            btn_options = QPushButton("≡")
+            btn_options.setFont(QFont("DejaVu Sans", 12))
+            btn_options.setFocusPolicy(NO_FOCUS)
+            btn_options.setStyleSheet(
+                "QPushButton{background:#222;border:2px solid #333;"
+                "border-radius:10px;color:#fff;}"
+                "QPushButton:pressed{background:#333; border:2px solid #fff;}"
             )
-            btn_delete.setFixedSize(55, 55)
-            btn_delete.clicked.connect(lambda _, f=arquivo: self.delete_file(f))
+            btn_options.setFixedSize(55, 55)
+            btn_options.clicked.connect(lambda _, f=arquivo, b=btn_options: self.show_options(f, b))
 
             layoutarquivo.addWidget(lbl_thumb)
             layoutarquivo.addWidget(lbl_arquivo)
             layoutarquivo.addStretch()
-            layoutarquivo.addWidget(btn_delete)  # sem self.
+            layoutarquivo.addWidget(btn_options)  # sem self.
 
             self.files_layout.addWidget(item_widget)  # adiciona o WIDGET, não o layout
 
-        self.files_layout.addStretch()  # empurra os itens pra cima, evita esticar
+        self.files_layout.addStretch()
+        self.atualizar_disco()
 
     def on_thumb_pronta(self, arquivo, caminho_thumb):
         """Chamado quando um ThumbnailWorker termina de gerar a thumbnail."""
@@ -1237,21 +1527,603 @@ class FilesWindow(QWidget):
             except RuntimeError:
                 pass  # o label pode já ter sido destruído se a tela foi trocada
 
+    def _item_navegacao(self, texto, destino, apagavel=False):
+        w = ClickableItem()
+        w.clicked.connect(lambda d=destino: self.entrar_pasta(d))
+
+        lay = QHBoxLayout(w)
+        lay.setSpacing(0)
+
+        icone = QLabel("⛀")
+        icone.setFixedSize(125, 75)
+        icone.setAlignment(Qt.AlignCenter)
+        icone.setFont(QFont("DejaVu Sans", 22))
+        icone.setStyleSheet("background:transparent; border:none;")
+
+        nome = QLabel(texto)
+        nome.setFont(QFont("DejaVu Sans", 12))
+        nome.setStyleSheet("background:transparent; border:none;")
+
+        lay.addWidget(icone)
+        lay.addWidget(nome)
+        lay.addStretch()
+
+        if apagavel:
+            btn_x = QPushButton("✕")
+            btn_x.setFont(QFont("DejaVu Sans", 12))
+            btn_x.setFocusPolicy(NO_FOCUS)
+            btn_x.setFixedSize(55, 55)
+            btn_x.setStyleSheet(
+                "QPushButton{background:#222;border:2px solid #333;"
+                "border-radius:10px;color:#fff;}"
+                "QPushButton:pressed{background:#b33; border:2px solid #fff;}"
+            )
+            btn_x.clicked.connect(
+                lambda _, d=destino: self.confirmar_apagar_pasta(d))
+            lay.addWidget(btn_x)
+
+        return w
+
+    def entrar_pasta(self, destino):
+        destino = os.path.realpath(destino)
+        if destino != self.raiz and not destino.startswith(self.raiz + os.sep):
+            return
+        self.pasta_atual = destino
+        self.lbl_titulo.setText(
+            "Arquivos Gravados" if destino == self.raiz
+            else os.path.relpath(destino, self.raiz)
+        )
+        self.load_files()
+        self.scroll_area.verticalScrollBar().setValue(0)
+
+    def show_options(self, arquivo, botao=None):
+        escolher(arquivo,
+                 [("➤   Mover", "mover"),
+                  ("✐   Renomear", "renomear"),
+                  ("X   Deletar", "deletar")],
+                 self, lambda v: self._acao_arquivo(v, arquivo))
+
+    def _acao_arquivo(self, acao, arquivo):
+        if acao == "mover":
+            self.move_file(arquivo)
+        elif acao == "renomear":
+            self.rename_file(arquivo)
+        elif acao == "deletar":
+            self.delete_file(arquivo)
+
+    def rename_file(self, arquivo):
+        caminho = os.path.join(self.pasta_atual, arquivo)
+        ov = RenameOverlay(caminho, self)
+        ov.renomeado.connect(self._apos_renomear)
+        ov.setGeometry(self.rect())
+        ov.show()
+        ov.raise_()
+        ov.edit.setFocus()
+
+    def _apos_renomear(self, antigo, novo):
+        self._sujo = True
+        self.salvar_scroll()
+        self.load_files()
+        self.restaurar_scroll()
+
+    def move_file(self, arquivo):
+        caminho = os.path.join(self.pasta_atual, arquivo)
+        ov = MoveOverlay(caminho, self)
+        ov.movido.connect(self._apos_mover)
+        ov.setGeometry(self.rect())
+        ov.show()
+        ov.raise_()
+
+    def _apos_mover(self, origem, destino):
+        self._sujo = True
+        self.salvar_scroll()
+        self.load_files()
+        self.restaurar_scroll()
+
     def delete_file(self, nome_arquivo):
-        caminho = os.path.join(PASTA_SAIDA, nome_arquivo)
+        caminho = os.path.join(self.pasta_atual, nome_arquivo)
         if os.path.exists(caminho):
             os.remove(caminho)
 
-        caminho_thumb = os.path.join(PASTA_THUMBS, nome_arquivo + ".thumb.jpg")
+        caminho_thumb = thumb_de(caminho)
         if os.path.exists(caminho_thumb):
-            os.remove(caminho_thumb)  # remove o cache junto, senão fica lixo acumulando
+            os.remove(caminho_thumb)
 
         self._sujo = True
-        self.load_files()  # recarrega a lista depois de deletar
+        self.load_files()
+
+    def confirmar_apagar_pasta(self, caminho):
+        n = sum(len(fs) for _, _, fs in os.walk(caminho))
+        ov = ConfirmOverlay(
+            "Excluir pasta",
+            f"A pasta “{os.path.basename(caminho)}” e os {n} arquivo(s) "
+            f"dentro dela serão apagados. Não dá para desfazer.",
+            self)
+        ov.confirmado.connect(lambda c=caminho: self.apagar_pasta(c))
+        ov.setGeometry(self.rect())
+        ov.show()
+        ov.raise_()
+
+    def apagar_pasta(self, caminho):
+        # limpa as thumbs dos arquivos de dentro antes, senão viram lixo órfão
+        for base, _, arqs in os.walk(caminho):
+            for nome in arqs:
+                t = thumb_de(os.path.join(base, nome))
+                if os.path.exists(t):
+                    try:
+                        os.remove(t)
+                    except OSError:
+                        pass
+        try:
+            shutil.rmtree(caminho)
+        except OSError as e:
+            self.lbl_titulo.setText(f"Erro: {e.strerror}")
+            return
+
+        self._sujo = True
+        self.salvar_scroll()
+        self.load_files()
+        self.restaurar_scroll()
 
     def voltar(self):
         if self.parent_app:
             self.parent_app.tela_principal()
+
+    @staticmethod
+    def _fmt_bytes(n):
+        for u in ("B", "KB", "MB", "GB", "TB"):
+            if n < 1024 or u == "TB":
+                return f"{n:.0f} {u}" if u in ("B", "KB") else f"{n:.1f} {u}"
+            n /= 1024
+
+    def atualizar_disco(self):
+        try:
+            uso = shutil.disk_usage(self.raiz)
+        except OSError:
+            self.lbl_tamanho.setText("")
+            return
+        usado = uso.total - uso.free
+        pct = usado * 100 / uso.total
+        self.lbl_tamanho.setText(
+            f"{self._fmt_bytes(usado)} / {self._fmt_bytes(uso.total)}"
+        )
+        self.lbl_tamanho.setStyleSheet(
+            f"color:{'#f66' if pct >= 90 else '#888'};"
+        )
+
+
+# Confirmar
+
+class ConfirmOverlay(QWidget):
+    confirmado = Signal()
+
+    def __init__(self, titulo, mensagem, parent, rotulo_ok="Excluir"):
+        super().__init__(parent)
+        self.setGeometry(parent.rect())
+        self.setStyleSheet("background:transparent;")
+
+        card = QFrame()
+        card.setObjectName("card")
+        card.setFixedWidth(min(520, max(320, parent.width() - 60)))
+        card.setStyleSheet(
+            "#card{background:#1b1b1b;border:2px solid #444;border-radius:16px;}"
+            "QLabel{color:#fff;}"
+        )
+        col = QVBoxLayout(card)
+        col.setContentsMargins(20, 18, 20, 18)
+        col.setSpacing(12)
+
+        lbl_t = QLabel(titulo)
+        lbl_t.setFont(QFont("DejaVu Sans", 15, QFont.Bold))
+        col.addWidget(lbl_t)
+
+        lbl_m = QLabel(mensagem)
+        lbl_m.setWordWrap(True)
+        lbl_m.setStyleSheet("color:#bbb;font-size:15px;")
+        col.addWidget(lbl_m)
+
+        lin = QHBoxLayout()
+        lin.setSpacing(10)
+        b_x = botao_touch("Cancelar", 0, 58)
+        b_x.clicked.connect(self._fechar)
+        b_ok = botao_touch(rotulo_ok, 0, 58)
+        b_ok.setStyleSheet(
+            "QPushButton{background:#b23b3b;border:2px solid #333;"
+            "border-radius:10px;color:#fff;padding:0 12px;}"
+            "QPushButton:pressed{background:#d14b4b;border:2px solid #fff;}"
+        )
+        b_ok.clicked.connect(self._ok)
+        lin.addWidget(b_x, 1)
+        lin.addWidget(b_ok, 1)
+        col.addLayout(lin)
+
+        raiz = QVBoxLayout(self)
+        raiz.addStretch()
+        meio = QHBoxLayout()
+        meio.addStretch()
+        meio.addWidget(card)
+        meio.addStretch()
+        raiz.addLayout(meio)
+        raiz.addStretch()
+
+    def paintEvent(self, _):
+        QPainter(self).fillRect(self.rect(), QColor(0, 0, 0, 205))
+
+    def _fechar(self):
+        self.hide()
+        self.deleteLater()
+
+    def _ok(self):
+        self.confirmado.emit()
+        self._fechar()
+
+
+# RENOMEAR
+
+class RenameOverlay(QWidget):
+    renomeado = Signal(str, str)          # caminho_antigo, caminho_novo
+
+    def __init__(self, caminho, parent):
+        super().__init__(parent)
+        self.caminho_thumb = thumb_de(caminho)
+        self.caminho = caminho
+        self.pasta   = os.path.dirname(caminho)
+        self.nome, self.ext = os.path.splitext(os.path.basename(caminho))
+
+        self.setGeometry(parent.rect())   # cobre a tela toda
+        self.setStyleSheet("background:transparent;")
+        self._montar()
+
+    # ---------------------------------------------------- fundo escuro
+    def paintEvent(self, _):
+        p = QPainter(self)
+        p.fillRect(self.rect(), QColor(0, 0, 0, 205))
+
+    # ---------------------------------------------------- construção
+    def _montar(self):
+        card = QFrame()
+        card.setObjectName("card")
+        card.setFixedWidth(min(600, parent_w := self.width() - 40))
+        card.setStyleSheet(
+            "#card{background:#1b1b1b;border:2px solid #444;border-radius:16px;}"
+            "QLabel{color:#fff;}"
+            "QLineEdit{background:#111;border:2px solid #555;border-radius:10px;"
+            "color:#fff;padding:8px 12px;font-size:22px;}"
+            "QLineEdit:focus{border:2px solid #fff;}"
+        )
+        col = QVBoxLayout(card)
+        col.setContentsMargins(20, 18, 20, 18)
+        col.setSpacing(12)
+
+        titulo = QLabel("Renomear")
+        titulo.setFont(QFont("DejaVu Sans", 15, QFont.Bold))
+        col.addWidget(titulo)
+
+        # ---- linha do campo + botão de teclado
+        linha = QHBoxLayout()
+        linha.setSpacing(8)
+
+        self.edit = QLineEdit(self.nome)
+        self.edit.setFocusPolicy(Qt.ClickFocus)
+        self.edit.selectAll()
+        linha.addWidget(self.edit, 1)
+
+        lbl_ext = QLabel(self.ext)
+        lbl_ext.setFont(QFont("DejaVu Sans", 14))
+        lbl_ext.setStyleSheet("color:#888;")
+        linha.addWidget(lbl_ext)
+
+        self.btn_kb = botao_touch("⌨", 55, 55, destaque=False)
+        self.btn_kb.setCheckable(True)
+        
+        linha.addWidget(self.btn_kb)
+
+        col.addLayout(linha)
+
+        self.aviso = QLabel("")
+        self.aviso.setStyleSheet("color:#f66;font-size:14px;")
+        col.addWidget(self.aviso)
+
+        # ---- teclado virtual (escondido)
+        self.teclado = TecladoVirtual(self.edit)
+        self.btn_kb.toggled.connect(self.teclado.setVisible)
+        self.btn_kb.setChecked(True)
+        col.addWidget(self.teclado)
+
+        # ---- ações
+        acoes = QHBoxLayout()
+        acoes.setSpacing(10)
+        b_cancel = botao_touch("Cancelar", 0, 58, destaque=False)
+        b_cancel.clicked.connect(self._fechar)
+        b_ok = botao_touch("Salvar", 0, 58, destaque=True)
+        b_ok.clicked.connect(self._salvar)
+        acoes.addWidget(b_cancel, 1)
+        acoes.addWidget(b_ok, 1)
+        col.addLayout(acoes)
+
+        # ---- centraliza o card
+        raiz = QVBoxLayout(self)
+        raiz.addStretch()
+        meio = QHBoxLayout()
+        meio.addStretch()
+        meio.addWidget(card)
+        meio.addStretch()
+        raiz.addLayout(meio)
+        raiz.addStretch()
+
+    # ---------------------------------------------------- interações
+
+    def _erro(self, msg):
+        self.aviso.setText(msg)
+
+    def _fechar(self):
+        self.hide()
+        self.deleteLater()
+
+    def _salvar(self):
+        novo = self.edit.text().strip()
+        if not novo:
+            return self._erro("Digite um nome.")
+        if re.search(r'[\\/:*?"<>|]', novo):
+            return self._erro('Não pode usar  \\ / : * ? " < > |')
+
+        destino = os.path.join(self.pasta, novo + self.ext)
+        if os.path.abspath(destino) == os.path.abspath(self.caminho):
+            return self._fechar()
+        if os.path.exists(destino):
+            return self._erro("Já existe um arquivo com esse nome.")
+
+        try:
+            os.rename(self.caminho, destino)
+        except OSError as e:
+            return self._erro(f"Erro: {e.strerror}")
+
+        # thumb é secundária: se falhar, só é regerada depois
+        destino_thumb = thumb_de(destino)
+        try:
+            if os.path.exists(self.caminho_thumb):
+                os.replace(self.caminho_thumb, destino_thumb)
+        except OSError:
+            pass
+
+        self.renomeado.emit(self.caminho, destino)
+        self._fechar()
+
+
+# Mover
+
+class MoveOverlay(QWidget):
+    movido = Signal(str, str)          # origem, destino
+
+    def __init__(self, caminho, parent):
+        super().__init__(parent)
+        self.caminho = os.path.realpath(caminho)
+        self.nome = os.path.basename(self.caminho)
+
+        self.rotulo  = "Interno"
+        self.raiz    = os.path.realpath(PASTA_SAIDA)
+        self.destino = self.raiz
+
+        self.setGeometry(parent.rect())
+        self.setStyleSheet("background:transparent;")
+        self._montar()
+        self._atualizar_barras()
+
+    def paintEvent(self, _):
+        QPainter(self).fillRect(self.rect(), QColor(0, 0, 0, 205))
+
+    # ------------------------------------------------------ construção
+    def _montar(self):
+        card = QFrame()
+        card.setObjectName("card")
+        card.setFixedWidth(min(600, parent_w := self.width() - 40))
+        card.setStyleSheet(
+            "#card{background:#1b1b1b;border:2px solid #444;border-radius:16px;}"
+            "QLabel{color:#fff;}"
+            "QLineEdit{background:#111;border:2px solid #555;border-radius:10px;"
+            "color:#fff;padding:8px 12px;font-size:22px;}"
+        )
+        
+        col = QVBoxLayout(card)
+        col.setContentsMargins(20, 18, 20, 18)
+        col.setSpacing(10)
+
+        self.titulo = QLabel("Mover")
+        self.titulo.setFont(QFont("DejaVu Sans", 15, QFont.Bold))
+        col.addWidget(self.titulo)
+
+        self.lbl_arq = QLabel(self.nome)
+        self.lbl_arq.setStyleSheet("color:#888;font-size:14px;")
+        col.addWidget(self.lbl_arq)
+
+        self.barra_armazem = botao_touch("", 0, 54)
+        self.barra_armazem.clicked.connect(self._menu_armazem)
+        col.addWidget(self.barra_armazem)
+
+        self.barra_pasta = botao_touch("", 0, 54)
+        self.barra_pasta.clicked.connect(self._menu_pasta)
+        col.addWidget(self.barra_pasta)
+
+        self.aviso = QLabel("")
+        self.aviso.setStyleSheet("color:#f66;font-size:14px;")
+        col.addWidget(self.aviso)
+
+        # ---- painel "criar pasta" (escondido)
+        self.painel_nova = QWidget()
+        pn = QVBoxLayout(self.painel_nova)
+        pn.setContentsMargins(0, 0, 0, 0)
+        pn.setSpacing(8)
+
+        self.edit_nova = QLineEdit()
+        self.edit_nova.setFocusPolicy(Qt.ClickFocus)
+        linha_nova = QHBoxLayout()
+        linha_nova.setSpacing(8)
+        linha_nova.addWidget(self.edit_nova, 1)
+
+        self.btn_kb_nova = botao_touch("⌨", 55, 55)
+        self.btn_kb_nova.setCheckable(True)
+        linha_nova.addWidget(self.btn_kb_nova)
+        pn.addLayout(linha_nova)
+
+        self.teclado_nova = TecladoVirtual(self.edit_nova)
+        self.teclado_nova.setVisible(False)
+        self.btn_kb_nova.toggled.connect(self.teclado_nova.setVisible)
+        pn.addWidget(self.teclado_nova)
+
+        lin = QHBoxLayout()
+        lin.setSpacing(8)
+        b_x = botao_touch("Cancelar", 0, 48)
+        b_x.clicked.connect(lambda: self._modo_nova(False))
+        b_c = botao_touch("Criar", 0, 48, destaque=True)
+        b_c.clicked.connect(self._criar_pasta)
+        lin.addWidget(b_x, 1)
+        lin.addWidget(b_c, 1)
+        pn.addLayout(lin)
+
+        self.painel_nova.setVisible(False)
+        col.addWidget(self.painel_nova)
+
+        # ---- ações
+        self.painel_acoes = QWidget()
+        acoes = QHBoxLayout(self.painel_acoes)
+        acoes.setContentsMargins(0, 0, 0, 0)
+        acoes.setSpacing(10)
+        b_cancel = botao_touch("Cancelar", 0, 58)
+        b_cancel.clicked.connect(self._fechar)
+        b_ok = botao_touch("Confirmar", 0, 58, destaque=True)
+        b_ok.clicked.connect(self._confirmar)
+        acoes.addWidget(b_cancel, 1)
+        acoes.addWidget(b_ok, 1)
+        col.addWidget(self.painel_acoes)
+
+        raiz = QVBoxLayout(self)
+        raiz.addStretch()
+        meio = QHBoxLayout()
+        meio.addStretch()
+        meio.addWidget(card)
+        meio.addStretch()
+        raiz.addLayout(meio)
+        raiz.addStretch()
+
+    def _estilo_menu(self, menu):
+        menu.setStyleSheet(
+            "QMenu{background:#222;border:2px solid #444;border-radius:10px;padding:6px;}"
+            "QMenu::item{color:#fff;padding:16px 28px;font-size:18px;border-radius:8px;}"
+            "QMenu::item:selected{background:#444;}"
+            "QMenu::separator{height:1px;background:#444;margin:4px 0;}"
+        )
+        return menu
+
+    def _atualizar_barras(self):
+        self.barra_armazem.setText("⛁   " + self.rotulo)
+        rel = os.path.relpath(self.destino, self.raiz)
+        self.barra_pasta.setText("⛀   " + ("/" if rel == "." else rel))
+
+    # ------------------------------------------------------ barra 1
+    def _menu_armazem(self):
+        itens = [(f"{r}   ({FilesWindow._fmt_bytes(l)} livres)", (r, c))
+                 for r, c, l in armazens()]
+        escolher("Armazém", itens, self, self._set_armazem)
+
+    def _set_armazem(self, par):
+        rotulo, caminho = par
+        try:
+            garantir_padrao(caminho)
+        except OSError as e:
+            return self._erro(f"Sem acesso: {e.strerror}")
+        self.rotulo  = rotulo
+        self.raiz    = os.path.realpath(caminho)
+        self.destino = self.raiz
+        self.aviso.setText("")
+        self._atualizar_barras()
+
+    # ------------------------------------------------------ barra 2
+    def _menu_pasta(self):
+        itens = []
+        if self.destino != self.raiz:
+            itens.append(("⬅   voltar uma pasta", os.path.dirname(self.destino)))
+        try:
+            with os.scandir(self.destino) as it:
+                for e in sorted(it, key=lambda e: e.name.lower()):
+                    if e.is_dir() and not e.name.startswith("."):
+                        itens.append(("⛀   " + e.name, e.path))
+        except OSError as e:
+            return self._erro(f"Erro: {e.strerror}")
+        itens.append(("＋   Criar pasta", None))
+
+        escolher("Pasta", itens, self, self._set_pasta)
+
+    def _set_pasta(self, caminho):
+        if caminho is None:
+            self.edit_nova.clear()
+            self._modo_nova(True)
+        else:
+            self._ir(caminho)
+
+    def _ir(self, destino):
+        destino = os.path.realpath(destino)
+        if destino != self.raiz and not destino.startswith(self.raiz + os.sep):
+            return                      # trava: não sai do armazém
+        self.destino = destino
+        self.aviso.setText("")
+        self._atualizar_barras()
+
+    def _criar_pasta(self):
+        nome = self.edit_nova.text().strip()
+        if not nome:
+            return self._erro("Digite um nome.")
+        if re.search(r'[\\/:*?"<>|]', nome):
+            return self._erro('Não pode usar  \\ / : * ? " < > |')
+        novo = os.path.join(self.destino, nome)
+        try:
+            os.makedirs(novo, exist_ok=True)
+        except OSError as e:
+            return self._erro(f"Erro: {e.strerror}")
+        self._modo_nova(False)
+        self._ir(novo)
+
+    def _modo_nova(self, on):
+        self.btn_kb_nova.setChecked(on)
+        self.titulo.setText("Criar pasta" if on else "Mover")
+        for w in (self.lbl_arq, self.barra_armazem,
+                  self.barra_pasta, self.painel_acoes):
+            w.setVisible(not on)
+        self.painel_nova.setVisible(on)
+        self.aviso.setText("")
+        if on:
+            self.edit_nova.setFocus()
+
+    # ------------------------------------------------------ ações
+    def _erro(self, msg):
+        self.aviso.setText(msg)
+
+    def _fechar(self):
+        self.hide()
+        self.deleteLater()
+
+    def _confirmar(self):
+        if self.destino == os.path.dirname(self.caminho):
+            return self._erro("O arquivo já está nessa pasta.")
+
+        destino = os.path.join(self.destino, self.nome)
+        if os.path.exists(destino):
+            return self._erro("Já existe um arquivo com esse nome lá.")
+
+        try:
+            shutil.move(self.caminho, destino)
+        except OSError as e:
+            return self._erro(f"Erro: {e.strerror}")
+
+        try:
+            t_ant = thumb_de(self.caminho)
+            if os.path.exists(t_ant):
+                os.replace(t_ant, thumb_de(destino))
+        except OSError:
+            pass
+
+        self.movido.emit(self.caminho, destino)
+        self._fechar()
+
 
 # Player
 
