@@ -1,6 +1,6 @@
 import os
 import subprocess
-from PyQt5.QtCore import QThread, pyqtSignal
+from PySide6.QtCore import QThread, pyqtSignal
 
 REPO_DIR = os.path.dirname(os.path.abspath(__file__))
 
