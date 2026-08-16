@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QApplication, QHBoxLayout, QLabel, QPushButton,
     QVBoxLayout, QWidget, QStackedWidget, QScrollArea, 
     QScroller, QSizePolicy, QProgressBar, QMessageBox, 
-    QDialog
+    QDialog, QMenu, QFrame, QLineEdit, QGridLayout
 
 )
 
