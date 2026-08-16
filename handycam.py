@@ -150,6 +150,7 @@ PASTA_VIDEOS = os.path.join(PASTA_SAIDA, "Videos")
 PASTA_FOTOS = os.path.join(PASTA_SAIDA, "Fotos")
 PASTA_THUMBS = os.path.join(PASTA_SAIDA, ".thumbs")  # cache das thumbnails
 SUBPASTA_USB = os.path.join("Handycam", "Media")
+<<<<<<< HEAD
 
 BTN_ON = ("QPushButton{background:#223;border:2px solid #5df;"
               "border-radius:10px;color:#fff;padding:6px 18px;}"
@@ -161,6 +162,8 @@ BTN_OFF = ("QPushButton{background:#222;border:2px solid #333;"
         "QPushButton:pressed{background:#333;}"
         "QPushButton:checked{background:#444;border:2px solid #fff;color:#fff;}")
 
+=======
+>>>>>>> 1700fbc27d0e3cee2b8607573d01b39c4cb276e0
 os.makedirs(PASTA_THUMBS, exist_ok=True)
 
 # No Pi 4, gerar várias thumbnails de vídeo ao mesmo tempo (cada uma
@@ -1094,7 +1097,17 @@ def botao_touch(texto, larg=0, alt=48, destaque=False):
         b.setFixedSize(larg, alt)
     else:
         b.setFixedHeight(alt)
+<<<<<<< HEAD
     b.setStyleSheet(BTN_ON if destaque else BTN_OFF)
+=======
+    base = "#2e6bd6" if destaque else "#222"
+    b.setStyleSheet(
+        f"QPushButton{{background:{base};border:2px solid #333;"
+        "border-radius:10px;color:#fff;padding:0 12px;text-align:center;}"
+        "QPushButton:pressed{background:#333;border:2px solid #fff;}"
+        "QPushButton:checked{background:#444;border:2px solid #fff;}"
+    )
+>>>>>>> 1700fbc27d0e3cee2b8607573d01b39c4cb276e0
     return b
 
 class EscolhaOverlay(QWidget):
@@ -1556,7 +1569,11 @@ class FilesWindow(QWidget):
             btn_x.setStyleSheet(
                 "QPushButton{background:#222;border:2px solid #333;"
                 "border-radius:10px;color:#fff;}"
+<<<<<<< HEAD
                 "QPushButton:pressed{background:#b33; border:2px solid #fff;}"
+=======
+                "QPushButton:pressed{background:#b23b3b; border:2px solid #fff;}"
+>>>>>>> 1700fbc27d0e3cee2b8607573d01b39c4cb276e0
             )
             btn_x.clicked.connect(
                 lambda _, d=destino: self.confirmar_apagar_pasta(d))
