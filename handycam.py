@@ -73,6 +73,7 @@ from handyupdate import AtualizadorWorker
 
 import efeitos
 
+from temas import C, qss
 
 # ----------------------------------------------------------------------
 # Configuração
@@ -151,7 +152,7 @@ PASTA_FOTOS = os.path.join(PASTA_SAIDA, "Fotos")
 PASTA_THUMBS = os.path.join(PASTA_SAIDA, ".thumbs")  # cache das thumbnails
 SUBPASTA_USB = os.path.join("Handycam", "Media")
 
-BTN_ON = ("QPushButton{background:#223;border:2px solid #5df;"
+BTN_ON = qss("QPushButton{background:$DestaqueBaixo;border:2px solid $Destaque;"
               "border-radius:10px;color:#fff;padding:6px 18px;}"
               "QPushButton:pressed{background:#333;}"
               "QPushButton:checked{background:#346;border:2px solid #7ef;color:#fff;}")
@@ -840,11 +841,11 @@ class Configura(QWidget):
         btn_aplicar.setMinimumHeight(64)
         btn_aplicar.setFont(QFont("DejaVu Sans", 15))
         btn_aplicar.setFocusPolicy(NO_FOCUS)
-        btn_aplicar.setStyleSheet(
-            "QPushButton{background:#235;border:2px solid #5df;"
-            "border-radius:10px;color:#5df;padding:6px 18px;}"
-            "QPushButton:pressed{background:#346;}"
-        )
+        btn_aplicar.setStyleSheet(qss(
+            "QPushButton{background:$DestaqueMedio;border:2px solid $Destaque;"
+            "border-radius:10px;color:$Destaque;padding:6px 18px;}"
+            "QPushButton:pressed{background:$DestaqueMedio;}"
+        ))
         btn_aplicar.clicked.connect(self.reiniciar_app)
 
         linha_botoes.addWidget(btn_voltar)
@@ -887,24 +888,24 @@ class Configura(QWidget):
         self.dlg_update.finalizar(msg)
 
     def aplicar_estilo_botoes(self):
-        self.setStyleSheet(self.styleSheet() + """
+        self.setStyleSheet(self.styleSheet() + qss("""
             QPushButton {
-                background: #222;
-                border: 2px solid #444;
+                background: $Principal;
+                border: 2px solid $PrincipalAlto;
                 border-radius: 10px;
                 padding: 6px 18px;
                 text-align: left;
                 padding-left: 14px;
             }
             QPushButton:hover {
-                background: #2a2a2a;
+                background: $PrincipalMedio;
             }
             QPushButton:checked {
-                background: #5bf;
-                border: 2px solid #5df;
-                color: #fff;
+                background: $DestaqueAlto;
+                border: 2px solid $Destaque;
+                color: $DestaqueFont;
             }
-        """)
+        """))
 
     def atualizar_aviso(self):
         mudou = (
@@ -944,7 +945,7 @@ class Configura(QWidget):
     def selecionar_efeito(self, nome, botao):
         for b, n in self.botoes_efeito:
             b.setChecked(n == nome)
-            b.setStyleSheet(self.BTN_ON if n == nome else self.BTN_OFF)
+            b.setStyleSheet(BTN_ON if n == nome else BTN_OFF)
 
         efeitos.definir(nome)                 # troca imediata, sem os.execv
         self.config["efeito"] = nome
@@ -1054,9 +1055,9 @@ class ClickableItem(QWidget):
     """Linha da lista de arquivos: emite clicked() só se o dedo não arrastou."""
     clicked = Signal()
 
-    ESTILO_NORMAL = ("background:#222; border:1px solid #444; "
+    ESTILO_NORMAL = qss("background:$PrincipalMedio; border:1px solid $PrincipalAlto; "
                      "border-radius:5px; margin:6px;")
-    ESTILO_PRESS  = ("background:#333; border:1px solid #777; "
+    ESTILO_PRESS  = qss("background:$Principal; border:1px solid $PrincipalAlto; "
                      "border-radius:5px; margin:6px;")
 
     def __init__(self, parent=None):
@@ -1099,9 +1100,11 @@ def botao_touch(texto, larg=0, alt=48, destaque=False):
 
 class EscolhaOverlay(QWidget):
     escolhido = Signal(object)          # o valor associado ao item
+    ejetado = Signal(object)            # o mountpoint, quando toca no "⏏"
 
     def __init__(self, titulo, itens, parent):
-        """itens: [(rótulo, valor), ...]"""
+        """itens: [(rótulo, valor), ...] ou [(rótulo, valor, extra), ...]
+        extra != None mostra um botão de ejetar na linha."""
         super().__init__(parent)
         self.setGeometry(parent.rect())
         self.setStyleSheet("background:transparent;")
@@ -1123,7 +1126,6 @@ class EscolhaOverlay(QWidget):
             lbl.setStyleSheet("color:#888;")
             col.addWidget(lbl)
 
-        # scroll: a lista de pastas pode ser longa
         area = QScrollArea()
         area.setWidgetResizable(True)
         area.setFrameShape(QFrame.NoFrame)
@@ -1136,11 +1138,27 @@ class EscolhaOverlay(QWidget):
         v = QVBoxLayout(dentro)
         v.setContentsMargins(0, 0, 0, 0)
         v.setSpacing(6)
-        for rotulo, valor in itens:
+        for item in itens:
+            rotulo, valor = item[0], item[1]
+            extra = item[2] if len(item) > 2 else None
+
+            linha = QWidget()
+            linha.setStyleSheet("background:transparent;")
+            h = QHBoxLayout(linha)
+            h.setContentsMargins(0, 0, 0, 0)
+            h.setSpacing(6)
+
             b = botao_touch(rotulo, 0, 56)
             b.setStyleSheet(b.styleSheet() + "QPushButton{text-align:left;}")
             b.clicked.connect(lambda _, x=valor: self._pick(x))
-            v.addWidget(b)
+            h.addWidget(b, 1)
+
+            if extra is not None:
+                eject = botao_touch("⏏", 56, 56)
+                eject.clicked.connect(lambda _, x=extra: self._eject(x))
+                h.addWidget(eject)
+
+            v.addWidget(linha)
         v.addStretch()
         area.setWidget(dentro)
 
@@ -1172,10 +1190,15 @@ class EscolhaOverlay(QWidget):
         self.escolhido.emit(valor)
         self._fechar()
 
+    def _eject(self, extra):
+        # não fecha o overlay: quem escuta `ejetado` decide (ex.: recarregar a lista)
+        self.ejetado.emit(extra)
 
-def escolher(titulo, itens, parent, callback):
+def escolher(titulo, itens, parent, callback, on_eject=None):
     ov = EscolhaOverlay(titulo, itens, parent)
     ov.escolhido.connect(callback)
+    if on_eject:
+        ov.ejetado.connect(on_eject)
     ov.setGeometry(parent.rect())
     ov.show()
     ov.raise_()
@@ -1228,7 +1251,7 @@ class TecladoVirtual(QWidget):
 
 
 def garantir_padrao(raiz):
-    """Cria Videos/ e Fotos/ na raiz do armazém. Levanta OSError se read-only."""
+    """Cria Videos/ e Fotos/ na raiz do armazenamento. Levanta OSError se read-only."""
     os.makedirs(os.path.join(raiz, "Videos"), exist_ok=True)
     os.makedirs(os.path.join(raiz, "Fotos"),  exist_ok=True)
     return raiz
@@ -1244,29 +1267,34 @@ def thumb_de(caminho):
     return os.path.join(PASTA_THUMBS, chave.replace(os.sep, "__") + ".thumb.jpg")
 
 def armazens():
-    """[(rótulo, caminho_raiz, livre_em_bytes), ...] — interno primeiro."""
-    lista = [("Interno", PASTA_SAIDA, PASTA_SAIDA)]      # (rótulo, ponto, raiz)
+    """[(rótulo, caminho_raiz, livre_em_bytes, mountpoint, externo), ...] — interno primeiro."""
+    lista = [("Interno", PASTA_SAIDA, PASTA_SAIDA, PASTA_SAIDA, False)]
     try:
         r = subprocess.run(
-            ["lsblk", "-J", "-o", "NAME,LABEL,MOUNTPOINT,TYPE"],
+            ["lsblk", "-J", "-o", "NAME,LABEL,MOUNTPOINT,TYPE,RM"],
             capture_output=True, text=True, timeout=3)
         dados = json.loads(r.stdout)
     except Exception:
         dados = {}
 
-    def anda(nos):
+    def eh_removivel(n):
+        rm = n.get("rm")
+        return rm is True or str(rm) == "1"
+
+    def anda(nos, removivel_herdado=False):
         for n in nos:
+            rm = removivel_herdado or eh_removivel(n)
             mp = n.get("mountpoint")
             if mp and mp not in ("/", "/boot", "/boot/firmware", "[SWAP]"):
                 lista.append((n.get("label") or os.path.basename(mp),
-                              mp, os.path.join(mp, SUBPASTA_USB)))
-            anda(n.get("children") or [])
+                              mp, os.path.join(mp, SUBPASTA_USB), mp, rm))
+            anda(n.get("children") or [], rm)
     anda(dados.get("blockdevices", []))
 
     saida = []
-    for rotulo, ponto, raiz in lista:
+    for rotulo, ponto, raiz, mp, externo in lista:
         try:
-            saida.append((rotulo, raiz, shutil.disk_usage(ponto).free))
+            saida.append((rotulo, raiz, shutil.disk_usage(ponto).free, mp, externo))
         except OSError:
             pass          # desmontado no meio do caminho
     return saida
@@ -1295,7 +1323,7 @@ class FilesWindow(QWidget):
         topo.addWidget(self.lbl_titulo)
         topo.addStretch()
 
-        self.btn_armazens = QPushButton("⛁  Armazéns")
+        self.btn_armazens = QPushButton("⛁  Armazenamento")
         self.btn_armazens.setFont(QFont("DejaVu Sans", 12))
         self.btn_armazens.setFocusPolicy(NO_FOCUS)
         self.btn_armazens.setFixedHeight(48)
@@ -1368,11 +1396,37 @@ class FilesWindow(QWidget):
         self.setLayout(layout)
 
     def show_armazens(self, botao=None):
-        itens = [(f"{'●  ' if os.path.realpath(c) == self.raiz else '     '}"
-                  f"{r}   ({self._fmt_bytes(l)} livres)", (r, c))
-                 for r, c, l in armazens()]
-        itens.append(("⟳   Procurar novamente", None))
-        escolher("Armazém", itens, self, self._set_armazem)
+        itens = []
+        for r, c, l, mp, externo in armazens():
+            marcado = os.path.realpath(c) == self.raiz
+            texto = f"{'●  ' if marcado else '     '}{r}   ({self._fmt_bytes(l)} livres)"
+            itens.append((texto, (r, c), mp if externo else None))
+        itens.append(("⟳   Procurar novamente", None, None))
+
+        self._overlay_armazens = escolher(
+            "Armazenamento", itens, self, self._set_armazem,
+            on_eject=self._ejetar_pendrive
+        )
+
+    def _ejetar_pendrive(self, mountpoint):
+        dispositivo = subprocess.run(
+            ["findmnt", "-n", "-o", "SOURCE", mountpoint],
+            capture_output=True, text=True
+        ).stdout.strip()
+        if not dispositivo:
+            self.lbl_titulo.setText("Não achei o dispositivo")
+            return
+        try:
+            subprocess.run(["udisksctl", "unmount", "-b", dispositivo], check=True)
+            subprocess.run(["udisksctl", "power-off", "-b", dispositivo], check=True)
+
+            self.trocar_armazem(PASTA_SAIDA)  # sempre volta pro interno
+
+            if self._overlay_armazens:
+                self._overlay_armazens._fechar()
+            QTimer.singleShot(0, self.show_armazens)
+        except subprocess.CalledProcessError as e:
+            self.lbl_titulo.setText(f"Erro ao ejetar: {e}")
 
     def _set_armazem(self, par):
         if par is None:
@@ -1390,7 +1444,7 @@ class FilesWindow(QWidget):
         self.raiz = os.path.realpath(caminho)
         self.pasta_atual = self.raiz
         interno = self.raiz == os.path.realpath(PASTA_SAIDA)
-        self.btn_armazens.setText("⛁  Armazéns" if interno else f"⛁  {rotulo}")
+        self.btn_armazens.setText("⛁  Armazenamento" if interno else f"⛁  {rotulo}")
         self.lbl_titulo.setText("Arquivos Gravados" if interno else rotulo)
         self.load_files()
         self.scroll_area.verticalScrollBar().setValue(0)
@@ -1900,7 +1954,7 @@ class MoveOverlay(QWidget):
         self.caminho = os.path.realpath(caminho)
         self.nome = os.path.basename(self.caminho)
 
-        self.rotulo  = "Interno"
+        self.rotulo  = "Armazenamento: Interno"
         self.raiz    = os.path.realpath(PASTA_SAIDA)
         self.destino = self.raiz
 
@@ -2005,15 +2059,6 @@ class MoveOverlay(QWidget):
         raiz.addLayout(meio)
         raiz.addStretch()
 
-    def _estilo_menu(self, menu):
-        menu.setStyleSheet(
-            "QMenu{background:#222;border:2px solid #444;border-radius:10px;padding:6px;}"
-            "QMenu::item{color:#fff;padding:16px 28px;font-size:18px;border-radius:8px;}"
-            "QMenu::item:selected{background:#444;}"
-            "QMenu::separator{height:1px;background:#444;margin:4px 0;}"
-        )
-        return menu
-
     def _atualizar_barras(self):
         self.barra_armazem.setText("⛁   " + self.rotulo)
         rel = os.path.relpath(self.destino, self.raiz)
@@ -2022,8 +2067,8 @@ class MoveOverlay(QWidget):
     # ------------------------------------------------------ barra 1
     def _menu_armazem(self):
         itens = [(f"{r}   ({FilesWindow._fmt_bytes(l)} livres)", (r, c))
-                 for r, c, l in armazens()]
-        escolher("Armazém", itens, self, self._set_armazem)
+                for r, c, l, mp, externo in armazens()]
+        escolher("Armazenamento", itens, self, self._set_armazem)
 
     def _set_armazem(self, par):
         rotulo, caminho = par
@@ -2031,7 +2076,7 @@ class MoveOverlay(QWidget):
             garantir_padrao(caminho)
         except OSError as e:
             return self._erro(f"Sem acesso: {e.strerror}")
-        self.rotulo  = rotulo
+        self.rotulo  = "Armazenamento: " + rotulo
         self.raiz    = os.path.realpath(caminho)
         self.destino = self.raiz
         self.aviso.setText("")
@@ -2063,7 +2108,7 @@ class MoveOverlay(QWidget):
     def _ir(self, destino):
         destino = os.path.realpath(destino)
         if destino != self.raiz and not destino.startswith(self.raiz + os.sep):
-            return                      # trava: não sai do armazém
+            return                      # trava: não sai do armazenamento
         self.destino = destino
         self.aviso.setText("")
         self._atualizar_barras()
