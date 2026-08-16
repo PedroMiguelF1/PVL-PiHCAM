@@ -7,12 +7,6 @@ _lut_pb = lut_ajuste(contraste=1.15)
 _lut_sepia = lut_ajuste(contraste=1.05, gama=0.95)
 
 
-@efeito("pb", "Preto e branco", tipo="cor")
-def preto_branco(arr):
-    aplicar_cinza(arr, para_cinza(arr))
-    aplicar_lut(arr, _lut_pb)
-
-
 @efeito("sepia", "Sépia", tipo="cor")
 def sepia(arr):
     # mais vermelho, menos azul: o tom amarelado de foto antiga
